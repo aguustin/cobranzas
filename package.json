@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "install": "^0.13.0"
+  }
+}
