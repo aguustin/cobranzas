@@ -43,3 +43,18 @@ export const createUserController = async (req: Request<{}, {}, UserBody>, res: 
 
     return 1
 }
+
+export const loginUserController = async (req:Request, res:Response) => {
+    const {email, password} = req.body
+
+    const findUser = await storeModel.findOne({"users.email": email})
+
+    if(findUser){
+        const passwordMatch: boolean = await bcrypt.compare(password, findUser.users[0]?.password)   
+        passwordMatch ? res.status(200).json({user: findUser}) : res.status(401).json({user: 1})
+    }
+
+    return res.status(200).json({user: 2})
+}
+
+
