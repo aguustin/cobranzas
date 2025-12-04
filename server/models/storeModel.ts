@@ -13,7 +13,8 @@ const StoreSchema = new mongoose.Schema({
         lastname:{type: String},
         email:{type: String},
         password:{type: String},
-        rol:{type: Number}
+        rol:{type: Number},
+        active:{type: Boolean}
     }]
 })
 

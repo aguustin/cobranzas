@@ -1,4 +1,4 @@
-  import mongoose from "mongoose";
+import mongoose from "mongoose";
   
 const SellSchema = new mongoose.Schema({
     sproductId:{type: String},

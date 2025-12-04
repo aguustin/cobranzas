@@ -9,6 +9,7 @@ const ProductSchema = new mongoose.Schema<ProductI>({
     productCategory:{type: String},
     productColor:{type: String},
     productQuantity:{type: Number},
+    productDiscount:{type: Number},
     productTaxe: {type: Number},
     totalSells:{type: Number, default: 0},
     totalTaxes:{type: Number, default: 0},

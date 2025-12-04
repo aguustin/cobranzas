@@ -11,7 +11,9 @@ export interface ProductI {
     productPrice: number;
     productCategory: string;
     productColor: string;
+    ProductBrand: string,
     productQuantity: number;
+    productDiscount: number;
     productTaxe: number;
     totalSells?: number;
     totalTaxes?: number;
@@ -21,4 +23,27 @@ export interface ProductI {
     subTotalEarned?: number;
     totalEarned?: number;
     active:boolean;
+}
+
+export interface ClientProductsI{
+    clientProductName:{type: Number},
+    clientProductBrand:{type: String},
+    clientProductQuantity:{type: Number},
+    totalSpent:{type: Number},
+    clientPaymentType:{type: Number}
+}
+
+export interface ClientI{
+    clientName?:string;
+    phone?:Date;
+    email?:string;
+    clientProducts?: ClientProductsI[];
+    giftCard?:number;
+    active: boolean;
+}
+
+
+export interface GiftCardI{
+    giftCode:string,
+    giftMount:number
 }

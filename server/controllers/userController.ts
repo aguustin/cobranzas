@@ -3,12 +3,13 @@ import storeModel from "../models/storeModel";
 import * as bcrypt from "bcrypt-ts";
 
 interface UserBody{
-    name: String,
-    lastname: String,
-    email: String,
-    password: String,
-    rol: Number,
-    storeId?: String
+    name: string,
+    lastname: string,
+    email: string,
+    password: string,
+    rol: number,
+    storeId?: string,
+    active?: boolean
 }
 
 export const createUserController = async (req: Request<{}, {}, UserBody>, res: Response): Promise<number> => {
@@ -58,3 +59,33 @@ export const loginUserController = async (req:Request, res:Response) => {
 }
 
 
+export const subsUserController = async (req: Request, res: Response) => {
+    const {storeId, userId} = req.body
+
+    const checkUser = await storeModel.findOne({_id: storeId, "users._id": userId})
+
+    if(checkUser){
+        checkUser.active 
+        ? 
+        await storeModel.updateOne(
+            {_id: storeId, "users._id": userId},
+            {
+                $set:{
+                    active: false
+                }
+            }
+        )
+        :
+          await storeModel.updateOne(
+            {_id: storeId, "users._id": userId},
+            {
+                $set:{
+                    active: true
+                }
+            }
+        )
+        return res.status(200).json({message: "Estado del usuario cambiado"})
+    }
+
+    return res.status(201).json({message: "No se encontro el usuario"})
+}
