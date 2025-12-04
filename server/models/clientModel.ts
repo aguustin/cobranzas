@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { ClientI } from "../interfaces/interfaces";
+import { ClientI } from "../interfaces/interfaces.ts";
   
 const ClientSchema = new mongoose.Schema<ClientI>({
     clientName:{type: String},

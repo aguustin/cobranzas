@@ -1,6 +1,6 @@
 
 import { Request, Response } from "express";
-import storeModel from "../models/storeModel";
+import storeModel from "../models/storeModel.ts";
 import * as bcrypt from "bcrypt-ts";
 
 interface CreateStoreBody {
@@ -42,8 +42,8 @@ export const loginStoreController = async (req: Request<{}, {}, CreateStoreBody>
     const {storeName, storePassword} = req.body
     const storeNameExists = await storeModel.findOne({storeName: storeName})
 
-    if(storeNameExists){
-        const match: boolean = await bcrypt.compare(storePassword, storeNameExists.storePassword)
+    if(!storeNameExists?.storePassword){
+        const match: boolean = await bcrypt.compare(storePassword, storeNameExists?.storePassword || '')
         if(match){
             return res.status(200).json({data: storeNameExists})
         }

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { ProductI } from "../interfaces/interfaces";
+import { ProductI } from "../interfaces/interfaces.ts";
 
 const ProductSchema = new mongoose.Schema<ProductI>({
     storeId: {type: String},

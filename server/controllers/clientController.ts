@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import clientModel from "../models/clientModel"
+import clientModel from "../models/clientModel.ts"
 
 interface ClientBody{
     clientName:string,

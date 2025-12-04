@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import productModel from "../models/productModel";
-import storeModel from "../models/storeModel";
-import clientModel from "../models/clientModel";
-import { updateGiftCardController } from "./giftCardController";
+import productModel from "../models/productModel.ts";
+import storeModel from "../models/storeModel.ts";
+import clientModel from "../models/clientModel.ts";
+import { updateGiftCardController } from "./giftCardController.ts";
 
 
 interface ProductBody {

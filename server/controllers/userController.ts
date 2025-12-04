@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import storeModel from "../models/storeModel";
+import storeModel from "../models/storeModel.ts";
 import * as bcrypt from "bcrypt-ts";
 
 interface UserBody{
@@ -51,7 +51,7 @@ export const loginUserController = async (req:Request, res:Response) => {
     const findUser = await storeModel.findOne({"users.email": email})
 
     if(findUser){
-        const passwordMatch: boolean = await bcrypt.compare(password, findUser.users[0]?.password)   
+        const passwordMatch: boolean = await bcrypt.compare(password, findUser.users[0]?.password || '')   
         passwordMatch ? res.status(200).json({user: findUser}) : res.status(401).json({user: 1})
     }
 
