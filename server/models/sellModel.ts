@@ -1,9 +1,12 @@
 import mongoose from "mongoose";
+import { SellI } from "../interfaces/interfaces.ts";
   
-const SellSchema = new mongoose.Schema({
+const SellSchema = new mongoose.Schema<SellI>({
+    storeId:{type:String},
     sproductId:{type: String},
     sellDate:{type: Date},
     sellUnityPrice:{type: Number},
+    sellQuantity:{type: Number},
     sellSubTotal:{type: Number},
     sellTaxes:{type: Number},
     sellTotal:{type: Number},

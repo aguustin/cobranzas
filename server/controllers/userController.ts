@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import storeModel from "../models/storeModel.ts";
 import * as bcrypt from "bcrypt-ts";
+import * as jwt from 'jsonwebtoken';
 
 interface UserBody{
     name: string,
@@ -47,11 +48,17 @@ export const createUserController = async (req: Request<{}, {}, UserBody>, res: 
 
 export const loginUserController = async (req:Request, res:Response) => {
     const {email, password} = req.body
-
     const findUser = await storeModel.findOne({"users.email": email})
 
     if(findUser){
-        const passwordMatch: boolean = await bcrypt.compare(password, findUser.users[0]?.password || '')   
+        const passwordMatch: boolean = await bcrypt.compare(password, findUser.users[0]?.password || '')
+        const secretKey: jwt.Secret = process.env.JWT_SECRET_KEY!
+        const options: jwt.SignOptions = {
+            expiresIn: '24h',
+            algorithm: 'HS256'
+        } 
+        const token = jwt.sign(email, secretKey, options)
+        console.log(token)
         passwordMatch ? res.status(200).json({user: findUser}) : res.status(401).json({user: 1})
     }
 

@@ -1,7 +1,25 @@
+/*-------------------------------------------------------- interfaces para el modelo de PRODUCTOS ------------------------------------------------------------*/
+
 interface MonthI {
     monthDate: Date;
     monthMount: number;
     taxesMount: number;
+}
+
+interface SizeI{
+    sizeSm:string;
+    sizeS:string;
+    sizeM:string;
+    sizeL:string;
+    sizeXL:string;
+    sizeXXL:string;
+    sizexXXL:string;
+}
+
+interface ColorI{
+    color:string;
+    quantity:number;
+    sizes:SizeI[];
 }
 
 export interface ProductI {
@@ -10,7 +28,7 @@ export interface ProductI {
     productName: string;
     productPrice: number;
     productCategory: string;
-    productColor: string;
+    sizes: ColorI[];
     ProductBrand: string,
     productQuantity: number;
     productDiscount: number;
@@ -24,6 +42,17 @@ export interface ProductI {
     totalEarned?: number;
     active:boolean;
 }
+
+/*-------------------------------------------------------- interfaces para el modelo de CATEGORIAS ------------------------------------------------------------*/
+
+export interface CategoryI{
+    categoryName: string;
+    categoryNumber: number;
+}
+
+
+/*-------------------------------------------------------- interfaces para el modelo de CLIENTES ------------------------------------------------------------*/
+
 
 export interface ClientProductsI{
     clientProductName:{type: Number},
@@ -42,6 +71,24 @@ export interface ClientI{
     active: boolean;
 }
 
+/*-------------------------------------------------------- interfaces para el modelo de SELLS (ventas) ------------------------------------------------------ */
+export interface SellI{
+    storeId: string;
+    sproductId:string;
+    sellDate:Date;
+    sellUnityPrice:number;
+    sellQuantity:number;
+    sellSubTotal:number;
+    sellTaxes:number;
+    sellTotal:number;
+    cupon:number;
+    discount:number;
+    paymentType:number;
+    ticketNumber:number;
+    ticketEmisionDate:Date;
+}
+
+/*-------------------------------------------------------- interfaces para el modelo de GIFTCARD ------------------------------------------------------------*/
 
 export interface GiftCardI{
     giftCode:string,
