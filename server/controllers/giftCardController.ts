@@ -1,5 +1,5 @@
 import { Request, Response } from "express"
-import giftCardModel from "../models/giftCardModel"
+import giftCardModel from "../models/giftCardModel.ts"
 
 export const registerGiftCardController = async (req: Request<{}, {}, {giftCode: string, giftMount: number}>, res: Response): Promise<Number> => {
     const {giftCode, giftMount} = req.body

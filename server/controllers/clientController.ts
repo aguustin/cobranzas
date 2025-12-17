@@ -49,3 +49,12 @@ export const subsClientController = async (req: Request, res: Response) => {
 
     return res.status(201).json({message: "No se encontro el producto"})
 }
+
+
+export const getClientsController = async (req: Request<{}, {}, {storeId: string}>, res: Response): Promise<Response> => {
+    const {storeId} = req.body
+
+    const clients = await clientModel.findOne({storeId: storeId})
+
+    return res.status(200).json({clients})
+}

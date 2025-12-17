@@ -4,6 +4,7 @@ import storeModel from "../models/storeModel.ts";
 import clientModel from "../models/clientModel.ts";
 import { updateGiftCardController } from "./giftCardController.ts";
 import sellModel from "../models/sellModel.ts";
+import managerModel from "../models/managerModel.ts";
 
 
 interface ProductBody {
@@ -21,19 +22,7 @@ interface ProductBody {
   sizes: string
 }
 
-interface SellBody {
-  sproductId:string,
-  sellDate:Date,
-  sellUnityPrice:number,
-  sellSubTotal:number,
-  sellTaxes:number,
-  sellTotal:number,
-  cupon:number,
-  discount:number,
-  paymentType:number,
-  ticketNumber:number,
-  ticketEmisionDate:Date
-}
+
 
 export const registerProductController = async ( req: Request, res:Response): Promise<Response> => {
     const {storeId, productId, productName, productPrice, productCategory, productDiscount, productQuantity, productTaxe} = req.body
@@ -97,9 +86,9 @@ export const addSizesController = async (req: Request<{}, {}, { storeId: string;
 export const listProductsController = async (req: Request<{}, {}, {storeId: string}>, res: Response) => {
     const {storeId} = req.body
 
-    const getProducts = await productModel.find({storeId: storeId})
+    const products = await productModel.find({storeId: storeId})
 
-    res.status(200).json({productsData: getProducts})
+    res.status(200).json({products})
 }
 
 export const getProductById = async (req:Request<{productMongoId: string}>, res:Response): Promise<Response> => {
@@ -141,22 +130,7 @@ export const updateProductController = async (req: Request<{}, {}, ProductBody>,
     }
 }
 
-/*export const updateController = async (req: Request<{}, {}, {productDet: ColorBody[], productMongoId: string}>, res: Response): Promise<Response> => {
-    const {productMongoId, productDet} = req.body
 
-    await productModel.updateOne(
-      {_id: productMongoId},
-      {
-        $addToSet:{
-          productDetails:{
-            color: productDet[0]?.color ?? '',
-            quantity: productDet[0]?.quantity ?? 0
-          }
-        }
-      }
-    )
-
-}*/
 
 export const subsProductController = async (req: Request, res: Response) => {
     const {productMongoId} = req.body
@@ -190,85 +164,23 @@ export const subsProductController = async (req: Request, res: Response) => {
 }
 
 
-export const sellProductController = async (req: Request<{}, {}, { products: ProductBody[], sells: SellBody[], giftMount:number }>, res: Response ): Promise<Response> => {
 
-  const { products, giftMount } = req.body;
+export const getStatisticsController = async (req: Request<{type: number}, {}, {idType: string}>, res: Response): Promise<Response> =>{
+  const {type} = req.params
+  const {idType} = req.body
+  let statistics;
 
-  // Descuentos por medio de pago
-  const paymentDiscounts: Record<number, number> = {
-    1: 0,  // sin descuento
-    2: 20, // tarjeta de débito
-    3: 30, // tarjeta de crédito
-    4: 40  // efectivo
-  };
+  const statisticsMap: Record<number, () => Promise<any>> = {
+      1: () => managerModel.findById(idType),
+      2: () => storeModel.findOne({ managerId: idType }),
+      3: () => productModel.findOne({ storeId: idType }),
+      4: () => sellModel.findOne({ storeId: idType }),
+      5: () => productModel.findOne({ storeId: idType }),
+  }
 
-  // Saldo disponible del gift card enviado desde el frontend
-  let remainingGiftCardMount = giftMount ?? 0;
+  const query = statisticsMap[type]
 
-  await Promise.all(
-    products.map(async (product) => {
+  statistics = await query
 
-      // 1️⃣ Aplicación de descuentos por producto y medio de pago
-      const paymentDiscount = paymentDiscounts[product.paymentType] || 0;
-      const totalDiscount = (product.productDiscount || 0) + paymentDiscount;
-
-      product.subTotalPrice = product.subTotalPrice - (product.subTotalPrice * totalDiscount / 100);
-
-      // 2️⃣ Aplicación progresiva del GiftCard
-      if (remainingGiftCardMount > 0) {
-        if (product.subTotalPrice <= remainingGiftCardMount) {
-          // El giftCard cubre completamente este producto
-          remainingGiftCardMount -= product.subTotalPrice;
-          product.subTotalPrice = 0;
-        } else {
-          // El product aún queda con un valor a pagar
-          product.subTotalPrice -= remainingGiftCardMount;
-          remainingGiftCardMount = 0;
-        }
-      }
-
-      // 3️⃣ Actualización del producto en la base de datos
-      await productModel.updateOne(
-        { _id: product.productMongoId, storeId: product.storeId },
-        {
-          $inc: {
-            productQuantity: -product.productQuantity,
-            totalSells: product.productQuantity,
-            totalTaxes: product.taxes,
-            subTotalMonthEarned: product.subTotalPrice,
-            subTotalEarned: product.subTotalPrice,
-            totalEarned: product.subTotalPrice - product.taxes,
-          }
-        }
-      );
-
-    
-      await sellModel.updateOne(
-          {sproductId:product.productMongoId},
-          {
-            $addToSet:{
-              storeId: product.storeId,
-              sellDate:Date.now(),
-              sellUnityPrice:product.unityPrice,
-              sellQuantity:product.productQuantity,
-              sellSubTotal:product.subTotalPrice,
-              sellTaxes:product.taxes,
-              sellTotal:product.subTotalPrice - product.taxes,
-              discount:totalDiscount,
-              paymentType:product.paymentType,
-              ticketNumber: null,
-              ticketEmisionDate:Date.now()
-            }
-          },
-          {upsert: true}
-        )
-      })
-  );
-
-  return res.status(200).json({  //devolver el valor al frontend y llamar updateGiftCardController para mandarle el giftcode y remainingGiftCardMount desde el frontend
-    message: "Venta realizada",
-    remainingGiftCardMount
-  });
-};
-
-
+  return res.status(200).json({statistics})
+}

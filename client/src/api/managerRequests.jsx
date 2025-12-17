@@ -1,0 +1,1 @@
+export const subscriptionRequest = (req, res) => axios.post('/subs', formData)

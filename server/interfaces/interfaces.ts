@@ -63,6 +63,7 @@ export interface ClientProductsI{
 }
 
 export interface ClientI{
+    storeId: string;
     clientName?:string;
     phone?:Date;
     email?:string;

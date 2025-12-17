@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { ClientI } from "../interfaces/interfaces.ts";
   
 const ClientSchema = new mongoose.Schema<ClientI>({
+    storeId: {type: String},
     clientName:{type: String},
     phone:{type: Date},
     email:{type: String},

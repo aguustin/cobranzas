@@ -77,3 +77,12 @@ export const subsStoreController = async (req: Request, res: Response) => {
     
     return res.status(200).json({unsubscribe: false})
 }
+
+
+export const getStoreController = async (req: Request<{}, {}, {storeId: string}>, res: Response): Promise<Response> => {
+    const {storeId} = req.body
+
+    const store = await storeModel.findOne({_id: storeId})
+
+    return res.status(200).json({store})
+}

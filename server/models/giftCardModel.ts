@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { GiftCardI } from "../interfaces/interfaces";
+import { GiftCardI } from "../interfaces/interfaces.ts";
 
 const GiftCardSchema = new mongoose.Schema<GiftCardI>({
     giftCode:{type: String},

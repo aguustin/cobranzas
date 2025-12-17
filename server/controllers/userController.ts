@@ -57,8 +57,8 @@ export const loginUserController = async (req:Request, res:Response) => {
             expiresIn: '24h',
             algorithm: 'HS256'
         } 
-        const token = jwt.sign(email, secretKey, options)
-        console.log(token)
+        jwt.sign(email, secretKey, options)
+        
         passwordMatch ? res.status(200).json({user: findUser}) : res.status(401).json({user: 1})
     }
 

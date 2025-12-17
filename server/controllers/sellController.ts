@@ -1,5 +1,155 @@
 import {Request, Response} from "express"
 import sellModel from "../models/sellModel.ts"
+import productModel from "../models/productModel.ts";
+import  {  v4  as  uuidv4  }  from  'uuid' ;
+import {mp} from "../lib/mp.ts";
+
+interface ProductBody {
+  storeId: string;
+  storeName: string;
+  productMongoId: string;
+  productName: string;
+  productPrice: number;
+  productQuantity: number;
+  productDiscount: number;
+  paymentType: number;
+  taxes: number;
+  unityPrice: number;
+  subTotalPrice: number;
+  totalPrice: number;
+  sizes: string
+}
+
+
+interface SellBody {
+  sproductId:string,
+  sellDate:Date,
+  sellUnityPrice:number,
+  sellSubTotal:number,
+  sellTaxes:number,
+  sellTotal:number,
+  cupon:number,
+  discount:number,
+  paymentType:number,
+  ticketNumber:number,
+  ticketEmisionDate:Date
+}
+
+
+export const sellProductController = async (req: Request<{}, {}, { products: ProductBody[], sells: SellBody[], giftMount:number }>, res: Response ): Promise<Response> => {
+  const { products, giftMount } = req.body;
+
+  const paymentDiscounts: Record<number, number> = {
+    1: 0,  // sin descuento
+    2: 20, // tarjeta de débito
+    3: 30, // tarjeta de crédito
+    4: 40  // efectivo
+  };
+
+  /*const getSubTotalforMp: number = products.reduce((accumulator, currentProduct) => {
+    const paymentDiscount = paymentDiscounts[currentProduct.paymentType] || 0;
+    return accumulator + currentProduct.subTotalPrice - (currentProduct.subTotalPrice * paymentDiscount) / 100
+  }, 0)
+
+  const orderId: string = uuidv4()
+
+  const response = await mp.instore.orders.create({  //creacion del qr de pago con mercadopago
+      external_reference: orderId,
+      title: `Venta de productos ${products[0]?.storeName}`,
+      description: "description",
+      total_amount: 1,
+      items: [
+        {
+          sku_number: orderId,
+          category: "marketplace",
+          title: "Venta de productos",
+          description: "description",
+          unit_price: getSubTotalforMp,
+          quantity: 1,
+          unit_measure: "unit",
+          total_amount: getSubTotalforMp,
+        },
+      ],
+      store_id: products[0]?.storeId,
+      notification_url: "https://75de159a824f.ngrok-free.app/api/payments/webhook",
+    });
+
+    res.json({
+      qr_data: response.qr_data,
+      qr_image: response.qr_image,
+    });*/
+  
+
+  // Saldo disponible del gift card enviado desde el frontend
+  let remainingGiftCardMount = giftMount ?? 0;
+
+  await Promise.all(
+    products.map(async (product) => {
+
+      //Aplicación de descuentos por producto y medio de pago
+      const paymentDiscount = paymentDiscounts[product.paymentType] || 0;
+      const totalDiscount = (product.productDiscount || 0) + paymentDiscount;
+
+      product.subTotalPrice = product.subTotalPrice - (product.subTotalPrice * totalDiscount / 100);
+
+      //Aplicación progresiva del GiftCard
+      if (remainingGiftCardMount > 0) {
+        if (product.subTotalPrice <= remainingGiftCardMount) {
+          // El giftCard cubre completamente este producto
+          remainingGiftCardMount -= product.subTotalPrice;
+          product.subTotalPrice = 0;
+        } else {
+          // El product aún queda con un valor a pagar
+          product.subTotalPrice -= remainingGiftCardMount;
+          remainingGiftCardMount = 0;
+        }
+      }
+
+      //Actualización del producto en la base de datos
+      await productModel.updateOne(
+        { _id: product.productMongoId, storeId: product.storeId },
+        {
+          $inc: {
+            productQuantity: -product.productQuantity,
+            totalSells: product.productQuantity,
+            totalTaxes: product.taxes,
+            subTotalMonthEarned: product.subTotalPrice,
+            subTotalEarned: product.subTotalPrice,
+            totalEarned: product.subTotalPrice - product.taxes,
+          }
+        }
+      );
+
+    
+      await sellModel.updateOne(
+          {sproductId:product.productMongoId},
+          {
+            $addToSet:{
+              storeId: product.storeId,
+              sellDate:Date.now(),
+              sellUnityPrice:product.unityPrice,
+              sellQuantity:product.productQuantity,
+              sellSubTotal:product.subTotalPrice,
+              sellTaxes:product.taxes,
+              sellTotal:product.subTotalPrice - product.taxes,
+              discount:totalDiscount,
+              paymentType:product.paymentType,
+              ticketNumber: null,
+              ticketEmisionDate:Date.now()
+            }
+          },
+          {upsert: true}
+        )
+      })
+  );
+
+  return res.status(200).json({  //devolver el valor al frontend y llamar updateGiftCardController para mandarle el giftcode y remainingGiftCardMount desde el frontend
+    message: "Venta realizada",
+    remainingGiftCardMount
+  });
+};
+
+
 
 export const orderByQuantityController = async (req: Request<{}, {}, {}, {storeId: string, order: number}>, res: Response): Promise<Response> => {
     const {storeId, order} = req.query
@@ -13,8 +163,9 @@ export const orderByQuantityController = async (req: Request<{}, {}, {}, {storeI
     return res.sendStatus(200)
 }
 
-export const filterByMonthController = async (
-  req: Request<{}, {}, {}, { storeId: string; month: string }>, res: Response): Promise<Response> => {
+
+
+export const filterByMonthController = async (req: Request<{}, {}, {}, { storeId: string; month: string }>, res: Response): Promise<Response> => {
   const { storeId, month } = req.query;
 
   if (!month) return res.status(400).json({ message: "Falta el parámetro month" });
