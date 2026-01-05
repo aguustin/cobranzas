@@ -13,6 +13,7 @@
   "description": "",
   "dependencies": {
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/nodemailer": "^7.0.4",
     "bcrypt-ts": "^8.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -22,6 +23,7 @@
     "mongoose": "^9.0.0",
     "morgan": "^1.10.1",
     "node-cron": "^4.2.1",
+    "nodemailer": "^7.0.12",
     "nodemon": "^3.1.11",
     "uuid": "^13.0.0"
   },

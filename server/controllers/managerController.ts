@@ -3,6 +3,7 @@ import managerModel from "../models/managerModel.ts"
 import * as bcrypt from "bcrypt-ts";
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
+import { mp } from "../lib/mp.ts";
 
 interface TokenPayload extends JwtPayload  {
   email: string;
@@ -12,11 +13,13 @@ interface ManagerBody {
     email:string,
     password:string,
     completeName:string,
-    plan:number,  //1. free, 2. simple, 3. plus
+    subscriptionPlan:number,  //1. free, 2. simple, 3. plus
     storesQuantity?:number,
     active:boolean,
     payment?: number,
-    paymentDate?: Date
+    paymentDate?: Date,
+    managerId: string,
+    cardToken: string
 }
 
 
@@ -38,11 +41,6 @@ export const createManagerContoller = async (req: Request<{}, {}, { managerBody:
         email: managerBody.email,
         password: hashedPassword,
         completeName: managerBody.completeName,
-        plan: managerBody.plan,
-        payments:[{
-            payment: managerBody.payment,
-            paymentDate: Date.now()
-        }]
    })
 
    return res.status(200).json({message: 'El manager se creo con exito!'})
@@ -72,70 +70,249 @@ export const loginManagerController = async (req: Request<{}, {}, ManagerBody>, 
     return res.status(401).json({message: 'Las credenciales ingresadas son incorrectas!'}) 
 }
 
-
+/**  const cardForm = .cardForm({
+  amount: "1000",
+  form: {
+    id: "form-checkout",
+    cardholderName: { id: "form-checkout__cardholderName" },
+    cardholderEmail: { id: "form-checkout__cardholderEmail" },
+    cardNumber: { id: "form-checkout__cardNumber" },
+    expirationDate: { id: "form-checkout__expirationDate" },
+    securityCode: { id: "form-checkout__securityCode" },
+    installments: { id: "form-checkout__installments" },
+    identificationType: { id: "form-checkout__identificationType" },
+    identificationNumber: { id: "form-checkout__identificationNumber" }
+  },
+  callbacks: {
+    onSubmit: (event) => {
+      event.preventDefault();
+      const cardToken = cardForm.getCardFormData().token;
+      // enviar token al backend
+    }
+  }
+}) */
 
 export const changePlanController = async (req: Request<{}, {}, ManagerBody>, res:Response): Promise<Response> => {
-    const {plan, payment, paymentDate} = req.body
-    
-
+    const {cardToken, subscriptionPlan} = req.body
     const token = req.headers.authorization?.split(" ")[1];
 
-    
     if(!token){
         return res.status(404).json({message: 'No se encuentra el token'})
     }
-    const decodedPayload = jwt.verify(
-        token,
-        process.env.JWT_SECRET_KEY!
-    ) as TokenPayload;
 
-    const findManager = await managerModel.findOne({email: decodedPayload.email})
+    const decodedPayload = jwt.verify(token, process.env.JWT_SECRET_KEY!) as TokenPayload;
 
-    if(!findManager) {return res.status(404).json({message: 'No se encuentra el usuario'})}
+    const manager = await managerModel.findOne({email: decodedPayload.email})
 
-    let costs: number;
-    const currentPlan = findManager.plan ?? 0;
-    
-    if(plan > currentPlan){
-        costs = plan - currentPlan
-    }else{
-        costs = plan
+    if(!manager) {return res.status(404).json({message: 'No se encuentra el usuario'})}
+
+    const plan_prices: Record<number, number> = {
+        1: 1000,
+        2: 2500,
+        3: 5000,
+    };
+
+    const amount:number = plan_prices[subscriptionPlan]
+
+    if(manager.subscription){
+         await mp.preapproval.update(manager.subscription, {
+            auto_recurring: {
+                frequency: 1,
+                frequency_type: "months",
+                transaction_amount: amount,
+                currency_id: "ARS",
+            },
+        });
+
+            await managerModel.updateOne(
+            { _id: manager._id },
+            {
+                $set: {
+                    subscriptionPlan: subscriptionPlan,
+                }
+            }
+            );
+
+            return res.status(200).json({
+            message: "subscriptionPlan actualizado correctamente",
+            });
     }
 
+    if (!cardToken) {
+        return res.status(400).json({
+            message: "Se requiere tarjeta para crear la suscripción"
+        });
+    }
+     const subscription = await mp.preapproval.create({
+        reason: "Suscripción mensual",
+        external_reference: manager._id.toString(),
+        payer_email: manager.email,
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: "months",
+          transaction_amount: amount,
+          currency_id: "ARS",
+        },
+        card_token_id: cardToken,
+        status: "authorized",
+      });
+
     await managerModel.updateOne(
-        {email: decodedPayload.email},
-        {
-            $set:{
-                plan: costs
-            }
-        }
-    )
-    return res.status(200).json({message: 'Plan cambiado con exito!'})
+    { _id: manager._id },
+    {
+        $set: {
+            subscription: subscription.id,
+            subscriptionPlan: subscriptionPlan,
+            subscriptionStatus: subscription.status,
+        },
+    }
+    );
+
+    return res.status(201).json({
+        message: "Suscripción creada",
+        subscriptionId: subscription.id,
+    });
 }
 
 
+export const changePreferencesController = async (req: Request, res:Response): Promise<Response> => {
+    const {email, language, moneyType} = req.body
 
-/** const { cardToken, email } = req.body;
+    await managerModel.updateOne({email: email},
+        {
+            $set:{
+                language:language,
+                moneyType:moneyType
+            }
+        }
+    )
+
+    return res.sendStatus(200)
+}
+
+
+export const cancelSubscriptionController = async (req: Request, res:Response): Promise<Response> => {
+    /*await mp.preapproval.update(subscriptionId, {
+        status: "cancelled"
+    });*/
+    return res.sendStatus(200)
+}
+
+export const mercadoPagoWebhookController = async (req:Request, res:Response): Promise<void> => {
+  try {
+    const { type, data } = req.body;
+
+    res.sendStatus(200);
+
+    if (type !== "payment") return;
+
+    const paymentId = data.id;
+
+    const payment = await mp.payment.findById(paymentId);
+
+    const subscriptionId = payment.body.preapproval_id;
+    const status = payment.body.status;
+
+    if (!subscriptionId) return;
+
+    if (status === "approved") {
+      await managerModel.updateOne(
+        { subscription: subscriptionId },
+        {
+          $push: {
+            payments: {
+              payment: payment.body.transaction_amount,
+              paymentDate: new Date(payment.body.date_approved),
+            },
+          },
+          $set: {
+            lastPaymentStatus: "approved",
+            active: true,
+          },
+        }
+      );
+    }
+
+    if (status === "rejected") {
+      await managerModel.updateOne(
+        { subscription: subscriptionId },
+        {
+          $set: {
+            lastPaymentStatus: "rejected",
+            active: false,
+          },
+        }
+      );
+    }
+
+  } catch (error) {
+    console.error("Webhook error:", error);
+  }
+
+};
+
+
+/** const { managerId, cardToken, email } = req.body;
 
   try {
-    const subscription = await mercadopago.preapproval.create({
+    const subscription = await mp.preapproval.create({
       reason: "Suscripción mensual - TEST",
+      external_reference: managerId,
+      payer_email: email,
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",
-        transaction_amount: 1000,
+        transaction_amount: costs,
         currency_id: "ARS",
       },
-      payer: {
-        email,
-        card_token_id: cardToken,
-      },
-      back_url: "http://localhost:5173/success",
+      card_token_id: cardToken,  
       status: "authorized",
     });
 
-    res.json(subscription);
+    await managerModel.updateOne({email: decodedPayload.email},
+    {
+      $set:{
+        subscription: subscription.id
+        subscriptionStatus: subscription.status,
+        subscriptionPlan:currentPlan
+      }
+    })
+
+     res.status(201).json({
+      subscriptionId: subscription.id,
+      status: subscription.status,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json(error);
-  } */
+  } 
+
+
+
+
+
+  EN EL FRONTEND TIENE QUE IR ESTO:
+
+  const cardForm = .cardForm({
+  amount: "1000",
+  form: {
+    id: "form-checkout",
+    cardholderName: { id: "form-checkout__cardholderName" },
+    cardholderEmail: { id: "form-checkout__cardholderEmail" },
+    cardNumber: { id: "form-checkout__cardNumber" },
+    expirationDate: { id: "form-checkout__expirationDate" },
+    securityCode: { id: "form-checkout__securityCode" },
+    installments: { id: "form-checkout__installments" },
+    identificationType: { id: "form-checkout__identificationType" },
+    identificationNumber: { id: "form-checkout__identificationNumber" }
+  },
+  callbacks: {
+    onSubmit: (event) => {
+      event.preventDefault();
+      const cardToken = cardForm.getCardFormData().token;
+      // enviar token al backend
+    }
+  }
+});
+    
+*/

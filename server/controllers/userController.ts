@@ -2,6 +2,12 @@ import { Request, Response } from "express";
 import storeModel from "../models/storeModel.ts";
 import * as bcrypt from "bcrypt-ts";
 import * as jwt from 'jsonwebtoken';
+import { dev_url_front, email_adm, jwt_secret_key, nodemailer_pass } from "../config.ts";
+import nodemailer from "nodemailer";
+
+interface JwtUserPayload extends jwt.JwtPayload {
+  email: string;
+}
 
 interface UserBody{
     name: string,
@@ -37,7 +43,7 @@ export const createUserController = async (req: Request<{}, {}, UserBody>, res: 
                     lastname: lastname,
                     email: email,
                     password: hashedPassword,
-                    rol: rol
+                    rol: 1
                 }
             }
         }
@@ -65,8 +71,90 @@ export const loginUserController = async (req:Request, res:Response) => {
     return res.status(200).json({user: 2})
 }
 
+export const recoverPasswordController = async (req: Request<{}, {}, {email: string}>, res:Response): Promise<Response> => {
+    const {email} = req.body
 
-export const subsUserController = async (req: Request, res: Response) => {
+    const checkEmail = await storeModel.findOne({'users.email': email})
+
+    if(checkEmail){
+
+    const secretKey: jwt.Secret = process.env.JWT_SECRET_KEY!
+    const options: jwt.SignOptions = {
+        expiresIn: '5m',
+        algorithm: 'HS256'
+    }
+
+    const token =  jwt.sign(email, secretKey, options)
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        port: 587,
+        secure: false, 
+        auth: {
+            user: email_adm,
+            pass: nodemailer_pass
+        }
+    });
+    await transporter.sendMail({
+        from: '"MyStore" <no-reply@gotickets.com>',
+        to: email,
+        subject: `MyStore - Recover password for ${email}`,
+        html: `
+            <p>Recupera tu contraseña clickeando en el siguiente enlace: ${dev_url_front}/updatePass/${token}</p>
+        `
+    });
+    }
+
+    return res.status(200).json({message: 'Te enviamos un mail a tu correo electronico para recuperar tu contraseña'})
+}
+
+export const confirmRecoveryPassController = async (req: Request<{token: string}>, res: Response): Promise<Response> => {
+    const {token, newPassword} = req.body
+    
+    const decoded = jwt.verify(token, jwt_secret_key!) as JwtUserPayload
+    
+    const {email} = decoded
+
+    const encryptNewPass = await bcrypt.hash(newPassword, 12)
+
+    await storeModel.updateOne(
+        {'users.email': email},
+        {
+            $set:{
+                'users.password': encryptNewPass
+            }
+        }
+    )
+
+    return res.status(200).json({ok: 1})
+}
+
+export const changePassController = async (req: Request<{}, {}, {email: string, oldPass: string, newPass: string}>, res: Response) => {
+    const {email, oldPass, newPass} = req.body
+
+    const store = await storeModel.findOne({'users.email': email}) 
+
+    const getUserPass = store?.users.find((u) => u.email === email)
+
+    const checkOldPass = await bcrypt.compare(oldPass, getUserPass?.password!)
+
+    if(checkOldPass){
+
+        const encriptNewPass = await bcrypt.hash(newPass, 12)
+
+        await storeModel.updateOne(
+            {'users.email': email},
+            {
+                $set:{
+                    'users.password': encriptNewPass
+                }
+            }
+        )
+    }
+
+}
+
+export const subsUserController = async (req: Request, res: Response): Promise<Response> => {
     const {storeId, userId} = req.body
 
     const checkUser = await storeModel.findOne({_id: storeId, "users._id": userId})
@@ -96,3 +184,19 @@ export const subsUserController = async (req: Request, res: Response) => {
 
     return res.status(201).json({message: "No se encontro el usuario"})
 }
+
+
+/*export const changePreferencesController = async (req: Request, res:Response): Promise<Response> => {
+    const {email, language, moneyType} = req.body
+
+    await storeModel.updateOne({'users.email': email},
+        {
+            $set:{
+                language:language,
+                moneyType:moneyType
+            }
+        }
+    )
+
+    return res.sendStatus(200)
+}*/

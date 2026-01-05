@@ -2,5 +2,8 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "install": "^0.13.0"
+  },
+  "dependencies": {
+    "nodemailer": "^7.0.12"
   }
 }
