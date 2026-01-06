@@ -7,6 +7,7 @@ const ProductSchema = new mongoose.Schema<ProductI>({
     productName:{type: String},
     productPrice:{type: Number},
     productCategory:{type: String},
+    productImg:{type: String},
     sizes:{
         type:[{
             sizeSm:{type: String},
@@ -26,14 +27,6 @@ const ProductSchema = new mongoose.Schema<ProductI>({
     totalTaxes:{type: Number, default: 0},
     subTotalMonthEarned:{type: Number, default: 0},
     totalMonthEarned:{type: Number, default: 0},
-    months:{
-        type: [{
-            monthDate: { type: Date },
-            monthMount: { type: Number, default: 0 },
-            taxesMonth: { type: Number, default: 0 }
-        }],
-        default: []
-    },
     subTotalEarned:{type: Number, default: 0},
     totalEarned:{type: Number, default: 0},
     active:{type: Boolean, default: true}

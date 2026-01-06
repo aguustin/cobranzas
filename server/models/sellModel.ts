@@ -13,8 +13,10 @@ const SellSchema = new mongoose.Schema<SellI>({
     cupon:{type: Number},
     discount:{type: Number},
     paymentType:{type: Number},
-    ticketNumber:{type: Number},
-    ticketEmisionDate:{type: Date}
+    ticketNumber:{type: String},
+    ticketEmisionDate:{type: Date},
+    storeName:{type:String},
+    userAtm:{type: String}
 })
 
 const sellModel = mongoose.model('Sell', SellSchema)

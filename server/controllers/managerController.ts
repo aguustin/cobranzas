@@ -110,9 +110,19 @@ export const changePlanController = async (req: Request<{}, {}, ManagerBody>, re
         1: 1000,
         2: 2500,
         3: 5000,
+        4: 8000
     };
 
     const amount:number = plan_prices[subscriptionPlan]
+    
+    const stores_limit: Record<number,number> = {
+      1: 1,
+      2: 5,
+      3: 15,
+      4: 30
+    }
+
+    const storeslimits:number = stores_limit[subscriptionPlan]
 
     if(manager.subscription){
          await mp.preapproval.update(manager.subscription, {
@@ -164,6 +174,7 @@ export const changePlanController = async (req: Request<{}, {}, ManagerBody>, re
             subscription: subscription.id,
             subscriptionPlan: subscriptionPlan,
             subscriptionStatus: subscription.status,
+            storesLimit: storeslimits
         },
     }
     );
@@ -176,13 +187,12 @@ export const changePlanController = async (req: Request<{}, {}, ManagerBody>, re
 
 
 export const changePreferencesController = async (req: Request, res:Response): Promise<Response> => {
-    const {email, language, moneyType} = req.body
+    const {email, language } = req.body
 
     await managerModel.updateOne({email: email},
         {
             $set:{
-                language:language,
-                moneyType:moneyType
+                language:language
             }
         }
     )
@@ -191,10 +201,21 @@ export const changePreferencesController = async (req: Request, res:Response): P
 }
 
 
-export const cancelSubscriptionController = async (req: Request, res:Response): Promise<Response> => {
-    /*await mp.preapproval.update(subscriptionId, {
+export const cancelSubscriptionController = async (req: Request<{}, {}, {sessionId:string, subscription: string}>, res:Response): Promise<Response> => {
+    const {sessionId, subscription} = req.body
+
+    await mp.preapproval.update({subscriptionId: subscription}, {
         status: "cancelled"
-    });*/
+    });
+
+    await managerModel.updateOne({_id: sessionId},
+      {
+        $set:{
+          subscriptionStatus: "cancelled",
+          subscriptionPlan: 1
+        }
+      }
+    )
     return res.sendStatus(200)
 }
 

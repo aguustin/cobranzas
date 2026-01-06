@@ -11,10 +11,10 @@ const ManagerSchema = new mongoose.Schema({
         paymentDate: {type: Date}
     }],
     language:{type: String},
-    moneyType:{type: String},
     subscription:{type: String},
     subscriptionStatus: {type: String},
-    subscriptionPlan: {type: Number} //1. free, 2. simple, 3. plus
+    subscriptionPlan: {type: Number}, //1. free, 2. simple, 3. plus
+    storesLimit:{type: Number}
 })
 
 const managerModel = mongoose.model('Manager', ManagerSchema)

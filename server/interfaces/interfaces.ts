@@ -28,6 +28,7 @@ export interface ProductI {
     productName: string;
     productPrice: number;
     productCategory: string;
+    productImg: string;
     sizes: ColorI[];
     ProductBrand: string,
     productQuantity: number;
@@ -85,8 +86,10 @@ export interface SellI{
     cupon:number;
     discount:number;
     paymentType:number;
-    ticketNumber:number;
+    ticketNumber:string;
     ticketEmisionDate:Date;
+    storeName:string;
+    userAtm:string;
 }
 
 /*-------------------------------------------------------- interfaces para el modelo de GIFTCARD ------------------------------------------------------------*/

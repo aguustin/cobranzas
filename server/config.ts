@@ -8,3 +8,6 @@ export const mongo_uri = process.env.MONGO_URI
 export const jwt_secret_key = process.env.JWT_SECRET_KEY
 export const email_adm = process.env.EMAIL_ADM
 export const nodemailer_pass = process.env.NODEMAILER_PAS
+export const cloud_name = process.env.CLOUD_NAME
+export const cloud_api_key = process.env.CLOUD_API_KEY
+export const cloud_secret_key = process.env.CLOUD_SECRET_KEY

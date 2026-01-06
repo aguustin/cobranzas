@@ -186,6 +186,27 @@ export const subsUserController = async (req: Request, res: Response): Promise<R
 }
 
 
+export const updateUserController = async (req: Request<{}, {}, UserBody & {storeId: string, userId:string}>, res:Response): Promise<Response> => {
+    const {storeId, userId, ...data} = req.body
+
+    const dataToUpdate = Object.fromEntries(Object.entries(data).filter(([_, value]) => value !== undefined))
+
+    const updateUser = await storeModel.updateOne(
+        {_id:storeId, 'users._id':userId},
+        {
+            $set: dataToUpdate
+        }
+    )
+    
+    if(updateUser.matchedCount === 0){
+        return res.status(400)
+    }
+
+    return res.status(200).json({message: 1})
+}
+
+
+
 /*export const changePreferencesController = async (req: Request, res:Response): Promise<Response> => {
     const {email, language, moneyType} = req.body
 

@@ -3,6 +3,7 @@ import sellModel from "../models/sellModel.ts"
 import productModel from "../models/productModel.ts";
 import  {  v4  as  uuidv4  }  from  'uuid' ;
 import {mp} from "../lib/mp.ts";
+import voucherModel from "../models/voucherModel.ts";
 
 interface ProductBody {
   storeId: string;
@@ -36,8 +37,8 @@ interface SellBody {
 }
 
 
-export const sellProductController = async (req: Request<{}, {}, { products: ProductBody[], sells: SellBody[], giftMount:number }>, res: Response ): Promise<Response> => {
-  const { products, giftMount } = req.body;
+export const sellProductController = async (req: Request<{}, {}, { products: ProductBody[], storeId: string, giftMount:number, storeName: string, userAtm: string }>, res: Response ): Promise<Response> => {
+  const { products, storeId, giftMount, storeName, userAtm } = req.body;
 
   const paymentDiscounts: Record<number, number> = {
     1: 0,  // sin descuento
@@ -92,7 +93,7 @@ export const sellProductController = async (req: Request<{}, {}, { products: Pro
 
       product.subTotalPrice = product.subTotalPrice - (product.subTotalPrice * totalDiscount / 100);
 
-      //Aplicación progresiva del GiftCard
+    
       if (remainingGiftCardMount > 0) {
         if (product.subTotalPrice <= remainingGiftCardMount) {
           // El giftCard cubre completamente este producto
@@ -105,43 +106,41 @@ export const sellProductController = async (req: Request<{}, {}, { products: Pro
         }
       }
 
-      //Actualización del producto en la base de datos
       await productModel.updateOne(
         { _id: product.productMongoId, storeId: product.storeId },
         {
           $inc: {
-            productQuantity: -product.productQuantity,
-            totalSells: product.productQuantity,
-            totalTaxes: product.taxes,
-            subTotalMonthEarned: product.subTotalPrice,
-            subTotalEarned: product.subTotalPrice,
-            totalEarned: product.subTotalPrice - product.taxes,
+              productQuantity: -product.productQuantity,
+              totalSells: product.productQuantity,
+              totalTaxes: product.taxes,
+              subTotalEarned: product.subTotalPrice,
+              totalEarned: product.subTotalPrice - product.taxes,
           }
         }
       );
 
-    
-      await sellModel.updateOne(
-          {sproductId:product.productMongoId},
-          {
-            $addToSet:{
-              storeId: product.storeId,
-              sellDate:Date.now(),
-              sellUnityPrice:product.unityPrice,
-              sellQuantity:product.productQuantity,
-              sellSubTotal:product.subTotalPrice,
-              sellTaxes:product.taxes,
-              sellTotal:product.subTotalPrice - product.taxes,
-              discount:totalDiscount,
-              paymentType:product.paymentType,
-              ticketNumber: null,
-              ticketEmisionDate:Date.now()
-            }
-          },
-          {upsert: true}
-        )
-      })
-  );
+    const netTotal:number = Math.max(0, product.subTotalPrice - product.taxes);
+
+      await sellModel.create({
+          storeId: product.storeId,
+          sproductId: product.productMongoId,
+          sellDate: new Date(),
+          sellUnityPrice: product.unityPrice,
+          sellQuantity: product.productQuantity,
+          sellSubTotal: product.subTotalPrice,
+          sellTaxes: product.taxes,
+          sellTotal: netTotal,
+          discount: totalDiscount,
+          paymentType: product.paymentType,
+          ticketNumber: `T-${uuidv4()}`,
+          ticketEmisionDate: new Date(),
+          storeName,
+          userAtm
+      });
+    }
+));
+
+ 
 
   return res.status(200).json({  //devolver el valor al frontend y llamar updateGiftCardController para mandarle el giftcode y remainingGiftCardMount desde el frontend
     message: "Venta realizada",
