@@ -17,7 +17,8 @@ const StoreSchema = new mongoose.Schema({
         password:{type: String},
         rol:{type: Number}, //1. admin, 2. cajero, 3. supervisor
         active:{type: Boolean},
-        atmSells:{type:Number}
+        atmSells:{type:Number},
+        userAtmImg:{type: String},
     }],
     startHour:{type: Date},
     endHour:{type: Date},

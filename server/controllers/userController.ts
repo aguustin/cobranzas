@@ -4,6 +4,7 @@ import * as bcrypt from "bcrypt-ts";
 import * as jwt from 'jsonwebtoken';
 import { dev_url_front, email_adm, jwt_secret_key, nodemailer_pass } from "../config.ts";
 import nodemailer from "nodemailer";
+import cloudinary from "../lib/cloudinary.ts";
 
 interface JwtUserPayload extends jwt.JwtPayload {
   email: string;
@@ -22,6 +23,16 @@ interface UserBody{
 export const createUserController = async (req: Request<{}, {}, UserBody>, res: Response): Promise<number> => {
     const {name, lastname, email, password, rol} = req.body
     const storeId = req.body.storeId
+
+    let imageUrl: string | undefined;
+    
+    if (req.file) {
+        // Subida a Cloudinary
+        const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
+            folder: 'cobranza_usersAtm',
+        });
+        imageUrl = uploadResponse.secure_url;
+    }
 
     const emailMatch = await storeModel.findOne(
         {_id: storeId, 'users.email': email},
@@ -190,6 +201,16 @@ export const updateUserController = async (req: Request<{}, {}, UserBody & {stor
     const {storeId, userId, ...data} = req.body
 
     const dataToUpdate = Object.fromEntries(Object.entries(data).filter(([_, value]) => value !== undefined))
+
+    let imageUrl: string | undefined;
+    
+    if (req.file) {
+        const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
+            folder: 'cobranza_usersAtm',
+        });
+        imageUrl = uploadResponse.secure_url;
+        dataToUpdate.userAtmImg = imageUrl
+    }
 
     const updateUser = await storeModel.updateOne(
         {_id:storeId, 'users._id':userId},
