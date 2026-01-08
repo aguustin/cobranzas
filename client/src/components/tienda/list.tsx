@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 
-const List = () => {
+const Lists = () => {
     return(
         <>
             <nav>
@@ -51,4 +51,4 @@ const List = () => {
     )
 }
 
-export default List
+export default Lists

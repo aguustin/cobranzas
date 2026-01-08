@@ -1,7 +1,7 @@
-const Stock = () => {
+const Stocki = () => {
     return(
         <></>
     )
 }
 
-export default Stock
+export default Stocki
