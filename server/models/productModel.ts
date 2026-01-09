@@ -2,7 +2,9 @@ import mongoose from "mongoose";
 import { ProductI } from "../interfaces/interfaces.ts";
 
 const ProductSchema = new mongoose.Schema<ProductI>({
-    storeId: {type: String},
+    storeId: [{
+        store: {type: String}
+    }],
     productId:{type: String},  //es el ID escrito a mano por los usuarios. productMongoId utilizado en los controladores es el _id
     productName:{type: String},
     productPrice:{type: Number},

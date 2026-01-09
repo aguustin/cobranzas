@@ -27,7 +27,7 @@ interface ProductBody {
 
 
 export const registerProductController = async ( req: Request, res:Response): Promise<Response> => {
-    const {storeId, productId, productName, productPrice, productCategory, productDiscount, productQuantity, productTaxe} = req.body
+    const {storeId, productName, productPrice, productCategory, productDiscount, productQuantity, productTaxe} = req.body
 
     let imageUrl: string | undefined;
 
@@ -40,10 +40,9 @@ export const registerProductController = async ( req: Request, res:Response): Pr
     }
 
 
-    if(storeId.length > 0 && productId.length > 0 && productName.length > 0 && productPrice > 0 && productQuantity > 0){
+    if(storeId.length > 0 && productName.length > 0 && productPrice > 0 && productQuantity > 0){
         await productModel.create({
             storeId: storeId,
-            productId: productId,
             productName: productName,
             productPrice: productPrice,
             productCategory: productCategory,

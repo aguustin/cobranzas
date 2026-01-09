@@ -40,7 +40,7 @@ export const createManagerContoller = async (req: Request<{}, {}, { managerBody:
    await managerModel.create({
         email: managerBody.email,
         password: hashedPassword,
-        completeName: managerBody.completeName,
+        completeName: managerBody.completeName
    })
 
    return res.status(200).json({message: 'El manager se creo con exito!'})

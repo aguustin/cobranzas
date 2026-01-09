@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, matchPath, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import Nav from './components/nav/nav'
 import Sidebar from './components/sidebar/sidebar'
@@ -8,19 +8,26 @@ import Finances from './components/tienda/finances'
 import Sells from './components/tienda/sells'
 import Lists from './components/tienda/list'
 import Stocki from './components/tienda/stock'
+import LoginManager from './components/forms/loginManager'
+import RegisterManager from './components/forms/registerManager'
 
-function App() {
-
-  return (
+function AppRoutes() {
+  const location = useLocation();
+  const hideNavOnPaths = ['/login', '/signIn', '/recover_password', '/recover_password/:token'];
+  const shouldHideNav = hideNavOnPaths.some(path =>
+    matchPath({ path, end: true }, location.pathname)
+  );
+    return (
     <>
-      <BrowserRouter>
-          <Nav/>
+          {!shouldHideNav && <Nav/>}
           <div className="app-layout">
-            <Sidebar/>
+            {!shouldHideNav && <Sidebar/>}
             <main className="content">
               <Routes>
+                <Route path='/signIn' element={<RegisterManager/>}/>
+                <Route path='/login' element={<LoginManager/>}/>
                 <Route path='/' element={<Dashboard/>}/>
-                <Route path='/a' element={<Products/>}/>
+                <Route path='/products' element={<Products/>}/>
                 <Route path='/a' element={<Finances/>}/>
                 <Route path='/a' element={<Lists/>}/>
                 <Route path='/a' element={<Sells/>}/>
@@ -28,6 +35,16 @@ function App() {
               </Routes>
             </main>
           </div>
+    </>
+  )
+}
+
+function App() {
+
+  return (
+    <>
+      <BrowserRouter>
+        <AppRoutes/>
       </BrowserRouter>
     </>
   )
