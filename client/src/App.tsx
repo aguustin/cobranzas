@@ -29,7 +29,7 @@ function AppRoutes() {
                 <Route path='/' element={<Dashboard/>}/>
                 <Route path='/products' element={<Products/>}/>
                 <Route path='/a' element={<Finances/>}/>
-                <Route path='/a' element={<Lists/>}/>
+                <Route path='/store_list' element={<Lists/>}/>
                 <Route path='/a' element={<Sells/>}/>
                 <Route path='/a' element={<Stocki/>}/>
               </Routes>
