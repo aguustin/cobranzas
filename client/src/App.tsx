@@ -10,6 +10,7 @@ import Lists from './components/tienda/list'
 import Stocki from './components/tienda/stock'
 import LoginManager from './components/forms/loginManager'
 import RegisterManager from './components/forms/registerManager'
+import { ContextBodyProvider } from './context'
 
 function AppRoutes() {
   const location = useLocation();
@@ -19,6 +20,7 @@ function AppRoutes() {
   );
     return (
     <>
+        <ContextBodyProvider>
           {!shouldHideNav && <Nav/>}
           <div className="app-layout">
             {!shouldHideNav && <Sidebar/>}
@@ -35,6 +37,7 @@ function AppRoutes() {
               </Routes>
             </main>
           </div>
+        </ContextBodyProvider>
     </>
   )
 }

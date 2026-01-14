@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import storeModel from "../models/storeModel.ts";
 import * as bcrypt from "bcrypt-ts";
+import cloudinary from "../lib/cloudinary.ts";
 
 interface ITax {
   taxName: 'IVA' | 'IIBB' | 'TASA_MUNICIPAL' | 'GANANCIAS' | 'OTROS';
@@ -39,7 +40,18 @@ export const createStoreContoller = async (req: Request<{}, {}, StoreBody>, res:
     const salt: number = 12
     const hashedPassword: string = await bcrypt.hash(storePassword, salt)
 
+    let imageUrl: string | undefined;
+    
+    if (req.file) {
+        // Subida a Cloudinary
+        const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
+            folder: 'cobranza_products',
+        });
+        imageUrl = uploadResponse.secure_url;
+    }
+
     await storeModel.create({
+        storeImg: imageUrl,
         storeName: storeName,
         storePassword: hashedPassword,
         taxDomicile: taxDomicile,

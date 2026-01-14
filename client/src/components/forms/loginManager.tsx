@@ -46,7 +46,7 @@ const LoginManager = () => {
                         <input className="form-input" type="password" name="password"></input>
                     </div>
                     <div className="py-6 text-center">
-                        <p>¿No tienes cuenta? <Link className="text-purple-400 font-medium" to="/login">Registrare aqui</Link></p>
+                        <p>¿No tienes cuenta? <Link className="text-purple-400 font-medium" to="/signIn">Registrare aqui</Link></p>
                     </div>
                     <button className="important-element py-2 font-medium w-full" type="submit">Ingresar</button>
                 </form>

@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { ChevronDown} from 'lucide-react';
 import { Link } from "react-router-dom";
+import ContextBody from "../../context";
 
 const Nav = () => {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [dropdownTienda, setDropdownTienda] = useState(false)
-    const [dropdownAdmin, setDropdownAdmin] = useState(false)
+    const {session} = useContext(ContextBody)
+    const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+    const [dropdownTienda, setDropdownTienda] = useState<boolean>(false)
+    const [dropdownAdmin, setDropdownAdmin] = useState<boolean>(false)
+    
 
     return(
         <>
@@ -19,7 +22,7 @@ const Nav = () => {
                         </h3>
                     </div>
                     <div className="flex items-center max-w-[800px] justify-end">
-                        <input className="bg-gray-700 border-gray-500 w-[400px] p-2 rounded-xl" type="text" name="searchProduct" placeholder="search"></input>
+                        {session.email && <input className="bg-gray-700 border-gray-500 w-[400px] p-2 rounded-xl" type="text" name="searchProduct" placeholder="search"></input> }
                          <div className="relative">
                             <button
                                 onClick={() => setDropdownTienda(!dropdownTienda)}
@@ -43,16 +46,17 @@ const Nav = () => {
                             )}
                             </div>
                             <div className="relative">
+                               {session.email && 
                                 <button
                                     onClick={() => setDropdownAdmin(!dropdownAdmin)}
                                     className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-750 rounded-lg transition-colors border border-gray-700"
                                 >
                                     <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-sm font-bold">
-                                    JD
+                                    {session.username ? `${session.username.slice(0, 2)}` : 'I'} 
                                     </div>
-                                    <span className=" text-sm font-medium">Juan Díaz</span>
+                                    <span className=" text-sm font-medium">{session.username ? `${session.username}` : 'Iniciar sesion'} </span>
                                     <ChevronDown size={16} className={`transition-transform ${dropdownAdmin ? 'rotate-180' : ''}`} />
-                                </button>
+                                </button> }
                                 {dropdownAdmin && (
                                     <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
                                     <Link to="/" className="block px-4 py-3 hover:bg-gray-750 transition-colors text-sm">

@@ -43,21 +43,23 @@ const CreateProduct = ({setHideCreateProduct}: CreateProductProps) => {
         
  <div className="min-h-screen bg-gray-950 text-gray-100 p-8">
       <div className="max-w-3xl mx-auto">
-        {/* Botón Volver */}
-        <div className="mb-6">
-          <button 
-            onClick={() => setHideCreateProduct(false)} 
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600/50 hover:bg-indigo-700/50 text-white rounded-lg font-medium transition-all cursor-pointer"
-          >
-            <ChevronLeft size={20} />
-            Volver
-          </button>
-        </div>
+        <div className="flex justify-between">
+          {/* Botón Volver */}
+          <div className="mb-6">
+            <button 
+              onClick={() => setHideCreateProduct(false)} 
+              className="flex items-center gap-2 mt-1 px-4 py-2.5 bg-indigo-600/50 hover:bg-indigo-700/50 text-white rounded-lg font-medium transition-all cursor-pointer"
+            >
+              <ChevronLeft size={20} />
+              Volver
+            </button>
+          </div>
 
-        {/* Título */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Crear Nuevo Producto</h1>
-          <p className="text-gray-400">Completa la información del producto para agregarlo al inventario</p>
+          {/* Título */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Crear Nuevo Producto</h1>
+            <p className="text-gray-400">Completa la información del producto para agregarlo al inventario</p>
+          </div>
         </div>
 
         {/* Formulario */}
