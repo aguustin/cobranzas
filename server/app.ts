@@ -3,6 +3,7 @@ import morgan from "morgan"
 import cors from "cors"
 import { dbConnection } from "./connection.ts"
 import { port } from "./config.ts"
+import managerRoutes from "./routes/managerRoutes.ts"
 import sellRoutes from "./routes/sellRoutes.ts"
 import storeRoutes from "./routes/storeRoutes.ts"
 import userRoutes from "./routes/userRoutes.ts"
@@ -27,6 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('tiny'))
 
 //routes
+app.use(managerRoutes)
 app.use(sellRoutes)
 app.use(storeRoutes)
 app.use(userRoutes)

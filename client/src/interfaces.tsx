@@ -1,8 +1,15 @@
+
+
 export interface SignInBody {
     email: string;
     username: string;
     password: string;
     confirmPassword:string
+}
+
+export interface LoginBody {
+    email: string;
+    password: string;
 }
 
 export interface CreateProductBody {

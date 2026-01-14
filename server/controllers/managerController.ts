@@ -1,9 +1,11 @@
 import { Request, Response } from "express"
 import managerModel from "../models/managerModel.ts"
 import * as bcrypt from "bcrypt-ts";
-import * as jwt from 'jsonwebtoken';
+//import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
-import { mp } from "../lib/mp.ts";
+import { preApproval } from "../lib/mp.ts";
+import { paymentClient } from "../lib/mp.ts";
+import jwt from 'jsonwebtoken';
 
 interface TokenPayload extends JwtPayload  {
   email: string;
@@ -12,55 +14,56 @@ interface TokenPayload extends JwtPayload  {
 interface ManagerBody {
     email:string,
     password:string,
-    completeName:string,
-    subscriptionPlan:number,  //1. free, 2. simple, 3. plus
+    username:string,
+    subscriptionPlan?:number,  //1. free, 2. simple, 3. plus
     storesQuantity?:number,
-    active:boolean,
+    active?:boolean,
     payment?: number,
     paymentDate?: Date,
-    managerId: string,
-    cardToken: string
+    managerId?: string,
+    cardToken?: string
 }
 
 
-export const createManagerContoller = async (req: Request<{}, {}, { managerBody: ManagerBody } >, res: Response): Promise<Response> => {
-    const {managerBody} = req.body
-
+export const createManagerContoller = async (req: Request<{}, {}, { signInData: ManagerBody } >, res: Response): Promise<Response> => {
+    const {signInData} = req.body
+    console.log(signInData);
     const salt: number = 12
-    const hashedPassword: string = await bcrypt.hash(managerBody.password, salt)
+    const hashedPassword: string = await bcrypt.hash(signInData.password, salt)
 
     const managerMatch = await managerModel.findOne(
-        {email: managerBody.email},
+        {email: signInData.email},
     )
 
     if(managerMatch){
-        return res.status(302).json({message: 'El email del usuario ya existe!'})
+        return res.status(200).json({resMessage: 2})
     }
 
    await managerModel.create({
-        email: managerBody.email,
+        email: signInData.email,
         password: hashedPassword,
-        completeName: managerBody.completeName
+        username: signInData.username
    })
 
-   return res.status(200).json({message: 'El manager se creo con exito!'})
+   return res.status(200).json({resMessage: 1})
 }
 
 export const loginManagerController = async (req: Request<{}, {}, ManagerBody>, res: Response) => {
     const {email, password} = req.body
 
     const getManager = await managerModel.findOne({email: email})
+    console.log(email, password)
 
     if(getManager){
         const validPassword: boolean = await bcrypt.compare(password, getManager.password || '')
-
         if(validPassword){
+          
             const secretKey: jwt.Secret = process.env.JWT_SECRET_KEY!
              const options: jwt.SignOptions = {
-                expiresIn: '148h',
-                algorithm: 'HS256'
+                expiresIn: 60 * 60 * 24,
+                algorithm: "HS256"
             }
-           jwt.sign(email, secretKey, options)
+           jwt.sign({email}, secretKey, options)
            
            return res.status(200).json({manager: getManager})
         }
@@ -125,7 +128,7 @@ export const changePlanController = async (req: Request<{}, {}, ManagerBody>, re
     const storeslimits:number = stores_limit[subscriptionPlan]
 
     if(manager.subscription){
-         await mp.preapproval.update(manager.subscription, {
+         await preApproval.update(manager.subscription, {
             auto_recurring: {
                 frequency: 1,
                 frequency_type: "months",
@@ -153,7 +156,7 @@ export const changePlanController = async (req: Request<{}, {}, ManagerBody>, re
             message: "Se requiere tarjeta para crear la suscripción"
         });
     }
-     const subscription = await mp.preapproval.create({
+     const subscription = await preApproval.create({
         reason: "Suscripción mensual",
         external_reference: manager._id.toString(),
         payer_email: manager.email,
@@ -204,7 +207,7 @@ export const changePreferencesController = async (req: Request, res:Response): P
 export const cancelSubscriptionController = async (req: Request<{}, {}, {sessionId:string, subscription: string}>, res:Response): Promise<Response> => {
     const {sessionId, subscription} = req.body
 
-    await mp.preapproval.update({subscriptionId: subscription}, {
+    await preApproval.update({subscriptionId: subscription}, {
         status: "cancelled"
     });
 
@@ -229,7 +232,9 @@ export const mercadoPagoWebhookController = async (req:Request, res:Response): P
 
     const paymentId = data.id;
 
-    const payment = await mp.payment.findById(paymentId);
+    const payment = await paymentClient.get({
+      id: paymentId,
+    });
 
     const subscriptionId = payment.body.preapproval_id;
     const status = payment.body.status;
@@ -272,11 +277,16 @@ export const mercadoPagoWebhookController = async (req:Request, res:Response): P
 
 };
 
+export const getAllManagersController = async (req: Request<{}>, res:Response): Promise<Response> => {
+    const getAllManagers = await managerModel.find({})
+    
+    return res.send(getAllManagers)
+ }
 
 /** const { managerId, cardToken, email } = req.body;
 
   try {
-    const subscription = await mp.preapproval.create({
+    const subscription = await preApproval.create({
       reason: "Suscripción mensual - TEST",
       external_reference: managerId,
       payer_email: email,

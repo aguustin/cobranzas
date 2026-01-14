@@ -2,10 +2,14 @@ import { Link } from "react-router-dom"
 import type { SignInBody } from "../../interfaces";
 import { signInRequest } from "../../api/managerRequests";
 import appStoreB from '../../assets/app-store-b.png';
+import { useState } from "react";
+import type { AxiosResponse } from "axios";
+
 
 const RegisterManager = () => {
-
-    const signInManager = async (e: React.FormEvent<HTMLFormElement>): void => {
+    const [message, setMessage] = useState<string>('');
+    
+    const signInManager = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault()
         const form = e.currentTarget;
         const signInData: SignInBody = { 
@@ -15,11 +19,18 @@ const RegisterManager = () => {
             confirmPassword: form.confirmPassword.value
         }
 
-        await signInRequest(signInData)
+        const res: AxiosResponse<number> = await signInRequest(signInData)
+        
+        if(res.data.resMessage === 1){
+            window.location.href = "/login";
+        }
+
+        return setMessage('El usuario ya existe');
     }    
 
     return(
         <>
+        {message.length > 0 && <p className="text-red-500 text-center">{message}</p>}
         <div className="">
             <img className="mx-auto mb-10" src={appStoreB}></img>
             <div className="h-full center-content">
@@ -29,19 +40,19 @@ const RegisterManager = () => {
                     </div>
                     <div className="mb-4">
                         <label className="form-label">Email</label>
-                        <input className="form-input" type="email"></input>
+                        <input className="form-input" type="email" name="email"></input>
                     </div>
                     <div className="mb-4">
                         <label className="form-label">Nombre de usuario</label>
-                        <input className="form-input" type="email"></input>
+                        <input className="form-input" type="text" name="username"></input>
                     </div>
                     <div className="mb-4">
                         <label className="form-label">Contraseña</label>
-                        <input className="form-input" type="email"></input>
+                        <input className="form-input" type="password" name="password"></input>
                     </div>
                     <div className="mb-4">
                         <label className="form-label">Confirmar contraseña</label>
-                        <input className="form-input" type="email"></input>
+                        <input className="form-input" type="password" name="confirmPassword"></input>
                     </div>
                     <div className="py-6 text-center">
                         <p>¿Ya tienes cuenta? <Link className="text-purple-400 font-medium" to="/login">Ingresa aqui</Link></p>

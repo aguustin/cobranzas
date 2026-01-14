@@ -1,25 +1,35 @@
 import { Link } from "react-router-dom"
-import type { SignInBody } from "../../interfaces";
-import { signInRequest } from "../../api/managerRequests";
+import type { LoginBody } from "../../interfaces";
+import { loginRequest } from "../../api/managerRequests";
 import appStoreB from '../../assets/app-store-b.png';
+import { useState } from "react";
 
 const LoginManager = () => {
 
-    const signInManager = (e: React.FormEvent<HTMLFormElement>): void => {
+    const [message, setMessage] = useState<string>('');
+
+    const signInManager = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault()
         const form = e.currentTarget;
-        const signInData: SignInBody = { 
+        const signInData: LoginBody = { 
             email: form.email.value,
-            username: form.username.value,
-            password: form.password.value,
-            confirmPassword: form.confirmPassword.value
+            password: form.password.value
         }
 
-        signInRequest(signInData)
+        const res = await loginRequest(signInData)
+        
+          if(res.data.manager){
+            await localStorage.setItem('manager', JSON.stringify(res.data.manager))
+            window.location.href = "/";
+            return;
+        }
+        setMessage('El usuario o contraseña son incorrectos');
+        return; 
     }    
 
     return(
         <>
+        {message.length > 0 && <p className="text-red-500 text-center">{message}</p>}
         <div className="">
             <img className="mx-auto mb-10" src={appStoreB}></img>
             <div className="h-full center-content">
@@ -29,11 +39,11 @@ const LoginManager = () => {
                     </div>
                     <div className="mb-4">
                         <label className="form-label">Email</label>
-                        <input className="form-input" type="email"></input>
+                        <input className="form-input" type="email" name="email"></input>
                     </div>
                     <div className="mb-4">
                         <label className="form-label">Contraseña</label>
-                        <input className="form-input" type="email"></input>
+                        <input className="form-input" type="password" name="password"></input>
                     </div>
                     <div className="py-6 text-center">
                         <p>¿No tienes cuenta? <Link className="text-purple-400 font-medium" to="/login">Registrare aqui</Link></p>

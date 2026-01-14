@@ -2,7 +2,7 @@ import {Request, Response} from "express"
 import sellModel from "../models/sellModel.ts"
 import productModel from "../models/productModel.ts";
 import  {  v4  as  uuidv4  }  from  'uuid' ;
-import {mp} from "../lib/mp.ts";
+import { mp }  from "../lib/mp.ts";
 import voucherModel from "../models/voucherModel.ts";
 
 interface ProductBody {
@@ -47,38 +47,41 @@ export const sellProductController = async (req: Request<{}, {}, { products: Pro
     4: 40  // efectivo
   };
 
-  /*const getSubTotalforMp: number = products.reduce((accumulator, currentProduct) => {
+  const getSubTotalforMp: number = products.reduce((accumulator, currentProduct) => {
     const paymentDiscount = paymentDiscounts[currentProduct.paymentType] || 0;
     return accumulator + currentProduct.subTotalPrice - (currentProduct.subTotalPrice * paymentDiscount) / 100
   }, 0)
 
   const orderId: string = uuidv4()
 
-  const response = await mp.instore.orders.create({  //creacion del qr de pago con mercadopago
-      external_reference: orderId,
-      title: `Venta de productos ${products[0]?.storeName}`,
-      description: "description",
-      total_amount: 1,
-      items: [
-        {
-          sku_number: orderId,
-          category: "marketplace",
-          title: "Venta de productos",
-          description: "description",
-          unit_price: getSubTotalforMp,
-          quantity: 1,
-          unit_measure: "unit",
-          total_amount: getSubTotalforMp,
-        },
-      ],
-      store_id: products[0]?.storeId,
-      notification_url: "https://75de159a824f.ngrok-free.app/api/payments/webhook",
-    });
+  const response = await mp.instoreOrders.create({
+  body: {
+    external_reference: orderId,
+    title: `Venta de productos ${products[0]?.storeName}`,
+    description: "description",
+    total_amount: getSubTotalforMp,
+    items: [
+      {
+        sku_number: orderId,
+        category: "marketplace",
+        title: "Venta de productos",
+        description: "description",
+        unit_price: getSubTotalforMp,
+        quantity: 1,
+        unit_measure: "unit",
+        total_amount: getSubTotalforMp,
+      },
+    ],
+    store_id: products[0]?.storeId,
+    notification_url:
+      "https://75de159a824f.ngrok-free.app/api/payments/webhook",
+  },
+});
 
-    res.json({
-      qr_data: response.qr_data,
-      qr_image: response.qr_image,
-    });*/
+res.json({
+  qr_data: response.qr_data,
+  qr_image: response.qr_image,
+});
   
 
   // Saldo disponible del gift card enviado desde el frontend

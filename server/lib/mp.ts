@@ -1,8 +1,9 @@
-const MercadoPago = require("mercadopago");
+import { MercadoPagoConfig, PreApproval, Payment } from "mercadopago";
+import InstoreOrders from "mercadopago";
 
-MercadoPago.configure({
-  access_token: process.env.MP_ACCESS_TOKEN,
+export const mp = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN!,
 });
 
-// 👇 Forzamos el tipo porque el SDK no expone bien instore en TS
-export const mp: any = MercadoPago;
+export const preApproval = new PreApproval(mp);
+export const paymentClient = new Payment(mp);

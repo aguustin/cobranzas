@@ -227,7 +227,6 @@ export const updateUserController = async (req: Request<{}, {}, UserBody & {stor
 }
 
 
-
 /*export const changePreferencesController = async (req: Request, res:Response): Promise<Response> => {
     const {email, language, moneyType} = req.body
 
