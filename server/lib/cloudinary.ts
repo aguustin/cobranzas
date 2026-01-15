@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary'
 import { cloud_api_key, cloud_name, cloud_secret_key } from '../config.ts';
-require('dotenv').config();
+import dotenv from "dotenv"
+dotenv.config()
 
 cloudinary.config({
   cloud_name: cloud_name,

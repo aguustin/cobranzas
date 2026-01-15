@@ -11,10 +11,11 @@ interface ITax {
 }
 
 interface StoreBody {
+  managerId: string,
   storeName: string,
   storePassword: string,
   storePasswordB?: string,
-  taxDomicile: string,
+  domicile: string,
   identificationTaxNumber: number,
   phone: number,
   storeEmail: string,
@@ -28,10 +29,11 @@ interface StoreBody {
   storeTotalEarned:Number
 }
 
-export const createStoreContoller = async (req: Request<{}, {}, StoreBody>, res: Response): Promise<number> => {
-    const {storeName, taxDomicile, storePassword, identificationTaxNumber, phone, storeEmail, moneyType, startHour, endHour, storeTaxes} = req.body
+export const createStoreController = async (req: Request<{}, {}, StoreBody>, res: Response): Promise<number> => {
+    const {managerId, storeName, domicile, storePassword, identificationTaxNumber, phone, storeEmail, storeTaxes} = req.body
 
     const storeExists = await storeModel.findOne({storeName: storeName})
+
 
     if(storeExists){
         return 2
@@ -43,27 +45,25 @@ export const createStoreContoller = async (req: Request<{}, {}, StoreBody>, res:
     let imageUrl: string | undefined;
     
     if (req.file) {
-        // Subida a Cloudinary
         const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
             folder: 'cobranza_products',
         });
         imageUrl = uploadResponse.secure_url;
+        console.log(imageUrl)
     }
-
+    console.log(managerId, storeName, domicile, storePassword, identificationTaxNumber, phone, storeEmail, storeTaxes)
+    
     await storeModel.create({
+        managerId: managerId,
         storeImg: imageUrl,
         storeName: storeName,
         storePassword: hashedPassword,
-        taxDomicile: taxDomicile,
+        domicile: domicile,
         identificationTaxNumber: identificationTaxNumber,
         phone: phone,
         storeEmail: storeEmail,
-        moneyType: moneyType,
-        startHour: startHour,
-        endHour: endHour,
         storeTaxes: storeTaxes || []
     })
-
     return 1
 }
 

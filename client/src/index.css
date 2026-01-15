@@ -45,6 +45,10 @@ EJEMPLO DE LAYERS
   .secondary-element{
      @apply bg-gradient-to-r from-purple-900 to-violet-800 hover:from-purple-950 hover:to-violet-900 rounded-lg transition-colors cursor-pointer;
   }
+
+  .third-element{
+    @apply bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center
+  }
   
   .ui-elements {
     @apply bg-gradient-to-r from-gray-800 to-gray-700 rounded-lg;
@@ -60,6 +64,10 @@ EJEMPLO DE LAYERS
   
   .success-text {
     @apply bg-green-500/10 text-green-400 rounded-full text-sm font-medium;
+  }
+
+  .success-text-without-bg{
+    @apply text-green-400 text-sm font-medium
   }
 
   .list-a-button{

@@ -1,4 +1,4 @@
- import { ChevronLeft, Plus } from "lucide-react";
+ import { ChevronLeft } from "lucide-react";
 import { useContext, useState } from "react";
 import ContextBody from "../../context";
 import type { AxiosResponse } from "axios";
@@ -8,25 +8,43 @@ interface CreateStoreProps {
     setHideCreateProduct: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+interface StoreTax {
+  taxName: 'IVA' | 'IIBB' | 'TASA_MUNICIPAL' | 'GANANCIAS' | 'OTROS'
+  percentage: number
+}
+
+type TaxName = 'IVA' | 'IIBB' | 'TASA_MUNICIPAL' | 'GANANCIAS' | 'OTROS'
+
 const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
   const {session} = useContext(ContextBody)
   const [storeImgFile, setStoreImgFile] = useState<File | null>(null)
+  const [taxes, setTaxes] = useState<StoreTax[]>([])
+  const [taxeCategory, setTaxeCategory] = useState<TaxName>('IVA')
+  const [percentage, setPercentage] = useState<number>(0)
+  const [message, setMessage] = useState<number>(0)
 
   const createStore = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
      e.preventDefault()
      const form = e.currentTarget;
-
-    const formData = new FormData()
-    formData.append('managerId', session._id)
-    formData.append('storeImg', storeImgFile!)
-    formData.append('storeName', form.storeName)
-    formData.append('storePassword', form.storePassword)
-    formData.append('taxDomicile', form.taxDomicile)
-    formData.append('identificationTaxNumber', form.identificationTaxNumber)
-    formData.append('phone', form.phone)
-    formData.append('storeEmail', form.storeEmail)
-
-    const res: AxiosResponse<number> = await createStoreRequest(formData)
+    console.log(form.storePassword.value, ' ',  form.confirmPassword.value)
+    if(form.storePassword.value === form.confirmPassword.value){
+       setMessage(0)
+      
+      const formData = new FormData()
+      formData.append('managerId', session._id)
+      formData.append('storeImg', storeImgFile!)
+      formData.append('storeName', form.storeName.value)
+      formData.append('domicile', form.domicile.value)
+      formData.append('storePassword', form.storePassword.value)
+      formData.append('identificationTaxNumber', form.identificationTaxNumber.value)
+      formData.append('phone', form.phone.value)
+      formData.append('storeEmail', form.storeEmail.value)
+      formData.append('storeTaxes', JSON.stringify(taxes))
+      
+      const res: AxiosResponse<number> = await createStoreRequest(formData)
+    }else{
+      setMessage(1)
+    }
 
     /*if(res.data){
 
@@ -83,6 +101,18 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
                 placeholder=""
               />
             </div>
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-400 mb-2">
+                Confirma tu contraseña
+              </label>
+              <input 
+                className="form-input-create-product" 
+                type="password" 
+                name="confirmPassword"
+                placeholder=""
+              />
+            </div>
+            
 
              <div className="mb-6">
               <label className="block text-sm font-semibold text-gray-400 mb-2">
@@ -90,8 +120,8 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
               </label>
               <input 
                 className="form-input-create-product" 
-                type="password" 
-                name="taxDomicile"
+                type="text" 
+                name="domicile"
                 placeholder=""
               />
             </div>
@@ -123,15 +153,13 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
                     type="number" 
                     name="phone"
                     placeholder=""
-                    min="0"
-                    max="100"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">%</span>
                 </div>
               </div>
 
               {/**Email de la tienda */}
-              <div>
+              <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-400 mb-2">
                   Email
                 </label>
@@ -142,8 +170,31 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
                     name="storeEmail"
                     placeholder=""
                   />
+                 
+                </div>
+              </div>
+              <div className="flex items-center">
+                <div className="relative flex items-center justify-between">
+                <button className="third-element py-2 px-6 cursor-pointer mr-2" type="button" onClick={() => setTaxes(prevTaxes => [...prevTaxes, { taxName: taxeCategory, percentage: percentage}])}>Agregar</button>
+                  <select className="form-input-select-create-product w-[190px]" onChange={(e) => setTaxeCategory(e.target.value as TaxName)}>
+                      <option value="IVA">IVA</option>
+                      <option value="IIBB">IIBB</option>
+                      <option value="TASA_MUNICIPAL">TASA_MUNICIPAL</option>
+                      <option value="GANANCIAS">GANANCIAS</option>
+                      <option value="OTROS">OTROS</option>
+                  </select>
+                  <input className="form-input-number-create-product w-[140px] pr-10" type="number" name="percentage" onChange={(e) => setPercentage(Number(e.target.value))}/>
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">%</span>
                 </div>
+              </div>
+              <div className="mt-1">
+                {taxes.map((tax, index) => (
+                  <div key={index} className="flex items-center gap-4">
+                    <span className="success-text-without-bg">{tax.taxName}</span>
+                    -
+                    <span className="success-text-without-bg">{tax.percentage}%</span>
+                  </div>
+                ))}
               </div>
                <div>
                 <label htmlFor="storeHtml" className="block p-3 text-sm font-semibold text-gray-400 mb-2 mt-6 text-center text-xl bg-gray-900 border-2 rounded-xl">
@@ -159,11 +210,15 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
                     id="storeHtml"
                     onChange={(e) => setStoreImgFile(e.target.files?.[0] || null)}
                   />
-                  
-                  
                 </div>
               </div>
-              {/**imagen de la tienda */}
+              {message === 1 && 
+                <div className="mt-6 text-center flex items-center bg-red-500/10 rounded-xl justify-center">
+                  <svg width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M19.5 12C19.5 16.1421 16.1421 19.5 12 19.5C7.85786 19.5 4.5 16.1421 4.5 12C4.5 7.85786 7.85786 4.5 12 4.5C16.1421 4.5 19.5 7.85786 19.5 12ZM21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12ZM11.25 13.5V8.25H12.75V13.5H11.25ZM11.25 15.75V14.25H12.75V15.75H11.25Z" fill="#f87171"></path> </g></svg>
+                  <span className="text-red-400 p-3 font-medium">Las contraseñas no coinciden</span>
+                </div>
+              }
+                
 
               {/* Tipo de moneda 
               <div className="mb-6">
@@ -195,7 +250,7 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
           
 
             {/* Botones */}
-            <div className="flex gap-3 pt-4 border-t border-gray-700 mt-9">
+            <div className="flex gap-3 pt-4 border-t border-gray-700 mt-6 justify-end">
               <button className="important-element px-8 py-3 rounded-lg font-semibold" type="submit">Registrar Tienda</button>
               <button 
                 onClick={() => setHideCreateProduct(false)}
