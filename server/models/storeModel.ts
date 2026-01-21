@@ -33,7 +33,7 @@ const StoreSchema = new mongoose.Schema({
             type: Number, 
             required: true 
         }, // Ejemplo: 21, 3.5, etc.
-        description: { type: String }
+       // description: { type: String }
     }],
     months:{
         type: [{

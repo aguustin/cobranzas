@@ -5,7 +5,7 @@ import type { AxiosResponse } from "axios";
 import { createStoreRequest } from "../../api/storeRequests";
 
 interface CreateStoreProps {
-    setHideCreateProduct: React.Dispatch<React.SetStateAction<boolean>>;
+    setHideCreateStoreForm: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 interface StoreTax {
@@ -15,7 +15,7 @@ interface StoreTax {
 
 type TaxName = 'IVA' | 'IIBB' | 'TASA_MUNICIPAL' | 'GANANCIAS' | 'OTROS'
 
-const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
+const CreateStore = ({setHideCreateStoreForm}: CreateStoreProps) => {
   const {session} = useContext(ContextBody)
   const [storeImgFile, setStoreImgFile] = useState<File | null>(null)
   const [taxes, setTaxes] = useState<StoreTax[]>([])
@@ -24,11 +24,12 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
   const [message, setMessage] = useState<number>(0)
 
   const createStore = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-     e.preventDefault()
-     const form = e.currentTarget;
-    console.log(form.storePassword.value, ' ',  form.confirmPassword.value)
+    e.preventDefault()
+    const form = e.currentTarget;
+   
+
     if(form.storePassword.value === form.confirmPassword.value){
-       setMessage(0)
+      setMessage(0)
       
       const formData = new FormData()
       formData.append('managerId', session._id)
@@ -41,10 +42,14 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
       formData.append('storeEmail', form.storeEmail.value)
       formData.append('storeTaxes', JSON.stringify(taxes))
       
-      const res: AxiosResponse<number> = await createStoreRequest(formData)
-    }else{
-      setMessage(1)
+      const res = await createStoreRequest(formData)
+      if(res.data === 1){
+        return setMessage(1)
+      }
+      return setMessage(3)
     }
+      return setMessage(2)
+    
 
     /*if(res.data){
 
@@ -63,7 +68,7 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
           {/* Botón Volver */}
           <div className="mb-6">
             <button 
-              onClick={() => setHideCreateProduct(false)} 
+              onClick={() => setHideCreateStoreForm(false)} 
               className="flex items-center mt-1 gap-2 px-4 py-2.5 bg-indigo-600/50 hover:bg-indigo-700/50 text-white rounded-lg font-medium transition-all cursor-pointer"
             >
               <ChevronLeft size={20} />
@@ -212,8 +217,14 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
                   />
                 </div>
               </div>
-              {message === 1 && 
-                <div className="mt-6 text-center flex items-center bg-red-500/10 rounded-xl justify-center">
+              {message === 2 && 
+                <div className="mt-6 msg-success-text">
+                 <svg width="20" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#4ade80"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>success</title> <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <g id="add-copy" fill="#4ade80" transform="translate(42.666667, 42.666667)"> <path d="M213.333333,3.55271368e-14 C95.51296,3.55271368e-14 3.55271368e-14,95.51296 3.55271368e-14,213.333333 C3.55271368e-14,331.153707 95.51296,426.666667 213.333333,426.666667 C331.153707,426.666667 426.666667,331.153707 426.666667,213.333333 C426.666667,95.51296 331.153707,3.55271368e-14 213.333333,3.55271368e-14 Z M213.333333,384 C119.227947,384 42.6666667,307.43872 42.6666667,213.333333 C42.6666667,119.227947 119.227947,42.6666667 213.333333,42.6666667 C307.43872,42.6666667 384,119.227947 384,213.333333 C384,307.43872 307.438933,384 213.333333,384 Z M293.669333,137.114453 L323.835947,167.281067 L192,299.66912 L112.916693,220.585813 L143.083307,190.4192 L192,239.335893 L293.669333,137.114453 Z" id="Shape"> </path> </g> </g> </g></svg>
+                  <span className="text-green-400 p-3 font-medium">La Tienda fue creada con exito!</span>
+                </div>
+              }
+              {message === 2 && 
+                <div className="mt-6 msg-alert-text">
                   <svg width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M19.5 12C19.5 16.1421 16.1421 19.5 12 19.5C7.85786 19.5 4.5 16.1421 4.5 12C4.5 7.85786 7.85786 4.5 12 4.5C16.1421 4.5 19.5 7.85786 19.5 12ZM21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12ZM11.25 13.5V8.25H12.75V13.5H11.25ZM11.25 15.75V14.25H12.75V15.75H11.25Z" fill="#f87171"></path> </g></svg>
                   <span className="text-red-400 p-3 font-medium">Las contraseñas no coinciden</span>
                 </div>
@@ -253,7 +264,7 @@ const CreateStore = ({setHideCreateProduct}: CreateStoreProps) => {
             <div className="flex gap-3 pt-4 border-t border-gray-700 mt-6 justify-end">
               <button className="important-element px-8 py-3 rounded-lg font-semibold" type="submit">Registrar Tienda</button>
               <button 
-                onClick={() => setHideCreateProduct(false)}
+                onClick={() => setHideCreateStoreForm(false)}
                 className="cursor-pointer px-8 py-3 bg-gray-800 hover:bg-red-500/30 hover:text-white text-gray-400 rounded-lg font-semibold transition-all border border-gray-700"
               >
                 Cancelar

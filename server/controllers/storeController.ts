@@ -7,7 +7,7 @@ import cloudinary from "../lib/cloudinary.ts";
 interface ITax {
   taxName: 'IVA' | 'IIBB' | 'TASA_MUNICIPAL' | 'GANANCIAS' | 'OTROS';
   percentage: number;
-  isRetention?: boolean;
+ // isRetention?: boolean;
 }
 
 interface StoreBody {
@@ -29,42 +29,62 @@ interface StoreBody {
   storeTotalEarned:Number
 }
 
-export const createStoreController = async (req: Request<{}, {}, StoreBody>, res: Response): Promise<number> => {
+const uploadFileToCloudinary = (file: Express.Multer.File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+            { resource_type: 'auto', folder: 'eventsGoTicket' },
+            (error, result) => {
+                if (error) {
+                    console.error('Cloudinary upload error:', error);
+                    return reject(error);
+                }
+                resolve(result!.secure_url);
+            }
+        ).end(file.buffer);
+    });
+};
+
+
+export const createStoreController = async (req: Request<{}, {}, StoreBody>, res: Response): Promise<Response> => {
+
     const {managerId, storeName, domicile, storePassword, identificationTaxNumber, phone, storeEmail, storeTaxes} = req.body
 
     const storeExists = await storeModel.findOne({storeName: storeName})
 
-
     if(storeExists){
-        return 2
+        return res.status(200).json(2)
     }
 
     const salt: number = 12
     const hashedPassword: string = await bcrypt.hash(storePassword, salt)
 
-    let imageUrl: string | undefined;
+    
+    let storeImgUrl: string | undefined;
     
     if (req.file) {
-        const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
-            folder: 'cobranza_products',
-        });
-        imageUrl = uploadResponse.secure_url;
-        console.log(imageUrl)
+         storeImgUrl = await uploadFileToCloudinary(req.file)
     }
-    console.log(managerId, storeName, domicile, storePassword, identificationTaxNumber, phone, storeEmail, storeTaxes)
-    
+
+    const taxes: ITax[] = storeTaxes
+    ? typeof storeTaxes === 'string'
+        ? JSON.parse(storeTaxes)
+        : storeTaxes
+    : [];
+
+
     await storeModel.create({
         managerId: managerId,
-        storeImg: imageUrl,
+        storeImg: storeImgUrl,
         storeName: storeName,
         storePassword: hashedPassword,
         domicile: domicile,
         identificationTaxNumber: identificationTaxNumber,
         phone: phone,
         storeEmail: storeEmail,
-        storeTaxes: storeTaxes || []
+        storeTaxes: taxes || []
     })
-    return 1
+  
+    return res.status(200).json(1)
 }
 
 export const updateStoreController = async (req: Request<{}, {}, StoreBody & { storeId: string }>, res: Response): Promise<Response> => {
@@ -127,12 +147,12 @@ export const subsStoreController = async (req: Request, res: Response) => {
     return res.status(200).json({unsubscribe: false})
 }
 
-export const listStoresController = async (req: Request<{}, {}, {sessionId: string}>, res: Response): Promise<Response> => {
-    const {sessionId} = req.body
-
+export const listStoresController = async (req: Request<{sessionId: string}>, res: Response): Promise<Response> => {
+    const {sessionId} = req.params
+    console.log(sessionId)
     const stores = await storeModel.find({managerId: sessionId})
 
-    return res.status(200).json({stores})
+    return res.send(stores)
 }
 
 export const getStoreController = async (req: Request<{}, {}, {storeId: string}>, res: Response): Promise<Response> => {

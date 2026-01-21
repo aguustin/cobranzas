@@ -1,11 +1,26 @@
-import { useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import pruebaJpg from '../../assets/prueba.jpg'
 import { Link } from "react-router-dom"
 import CreateStore from "./createStore"
+import { listStoresRequest } from "../../api/storeRequests"
+import ContextBody from "../../context"
+//import EditStoreForm from "./editStore"
 
 const Lists = () => {
+    const {session} = useContext(ContextBody)
+    const [stores, setStores] = useState<[]>([])
     const [hideCreateStore, setHideCreateStore] = useState<boolean>(false)
+    const [hideEditStore, setHideEditStore] = useState<boolean>(false)
 
+    useEffect(() => {
+        const listStoresFunc = async () => {
+            const res = await listStoresRequest(session._id)
+            setStores(res.data)
+            console.log(res.data)
+        }
+        listStoresFunc()
+    }, [])
+    console.log(stores)
     return(
         <>
         {!hideCreateStore && <div>
@@ -17,20 +32,30 @@ const Lists = () => {
                 </div>
             </nav>
             <div className="flex flex-wrap">
-                <div className="bg-blue-500/10 w-[280px] mt-4 rounded-xl border-2 border-blue-900/50 mx-3">
-                    <img className="rounded-t-xl" src={pruebaJpg} alt=""></img>
-                    <div className="p-4">
-                        <h3 className="text-xl font-medium">Tienda numero 1</h3>
-                        <p className="mt-2">Direccion: Pedro B. palacios y San Martin 203</p>
-                        <div className="flex justify-end mt-3">
-                            <button className="secondary-element py-2 px-3 font-medium mx-1 ">Editar</button>
-                            <Link className="important-element py-2 px-3 font-medium mx-1" to="/">Ver</Link>
+                {stores.map((st) => 
+                    <div key={st._id} className="bg-blue-500/10 w-[280px] mt-4 rounded-xl border-2 border-blue-900/50 mx-3 cursor-pointer">
+                        <img className="rounded-t-xl" src={st.storeImg} alt=""></img>
+                        <div className="p-4">
+                            <h3 className="text-xl font-medium">{st.storeName}</h3>
+                            <p className="mt-2">{st.domicile}</p>
+                            <div className="flex justify-end mt-3">
+                                <button className="secondary-element py-2 px-3 font-medium mx-1" onClick={() => setHideEditStore(true)}>Editar</button>
+                                <Link className="important-element py-2 px-3 font-medium mx-1" to="/">Ver</Link>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>}
-         {hideCreateStore && (<CreateStore setHideCreateProduct={setHideCreateStore} />)}
+         {hideCreateStore && (<CreateStore setHideCreateStoreForm={setHideCreateStore} />)}
+         {/*hideEditStore && (<EditStoreForm 
+            setHideEditStoreForm={setHideEditStore}
+            storeName={storeN}
+            domicile={}
+            identificationTaxNumber={}
+            phone={}
+            storeEmail={} >
+        )*/}
         </>
     )
 }
