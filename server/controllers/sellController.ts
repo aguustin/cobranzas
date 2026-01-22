@@ -4,6 +4,7 @@ import productModel from "../models/productModel.ts";
 import  {  v4  as  uuidv4  }  from  'uuid' ;
 import { mp }  from "../lib/mp.ts";
 import voucherModel from "../models/voucherModel.ts";
+import boxesModel from "../models/boxModel.ts";
 
 interface ProductBody {
   storeId: string;
@@ -56,27 +57,27 @@ export const sellProductController = async (req: Request<{}, {}, { products: Pro
 
   const response = await mp.instoreOrders.create({
   body: {
-    external_reference: orderId,
-    title: `Venta de productos ${products[0]?.storeName}`,
-    description: "description",
-    total_amount: getSubTotalforMp,
-    items: [
-      {
-        sku_number: orderId,
-        category: "marketplace",
-        title: "Venta de productos",
-        description: "description",
-        unit_price: getSubTotalforMp,
-        quantity: 1,
-        unit_measure: "unit",
-        total_amount: getSubTotalforMp,
-      },
-    ],
-    store_id: products[0]?.storeId,
-    notification_url:
-      "https://75de159a824f.ngrok-free.app/api/payments/webhook",
-  },
-});
+      external_reference: orderId,
+      title: `Venta de productos ${products[0]?.storeName}`,
+      description: "description",
+      total_amount: getSubTotalforMp,
+      items: [
+        {
+          sku_number: orderId,
+          category: "marketplace",
+          title: "Venta de productos",
+          description: "description",
+          unit_price: getSubTotalforMp,
+          quantity: 1,
+          unit_measure: "unit",
+          total_amount: getSubTotalforMp,
+        },
+      ],
+      store_id: products[0]?.storeId,
+      notification_url:
+        "https://75de159a824f.ngrok-free.app/api/payments/webhook",
+    },
+  });
 
 res.json({
   qr_data: response.qr_data,
@@ -141,9 +142,18 @@ res.json({
           userAtm
       });
     }
+
 ));
 
- 
+  await boxesModel.updateOne(
+      {storeId: storeId},
+      {
+        $addToSet:{
+          boxDate: Date.now(),
+          totalMoneyInBox:getSubTotalforMp
+        }
+      }  
+   )
 
   return res.status(200).json({  //devolver el valor al frontend y llamar updateGiftCardController para mandarle el giftcode y remainingGiftCardMount desde el frontend
     message: "Venta realizada",

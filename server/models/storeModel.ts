@@ -20,6 +20,7 @@ const StoreSchema = new mongoose.Schema({
         active:{type: Boolean},
         atmSells:{type:Number},
         userAtmImg:{type: String},
+        isWorking:{type: Boolean}
     }],
     startHour:{type: Date},
     endHour:{type: Date},

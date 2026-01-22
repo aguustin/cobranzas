@@ -121,7 +121,7 @@ const EditStoreForm = () => {
 
         {/* Formulario */}
         <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
-          <button onClick={() => setShowSubsAlert(true)}>Dar de baja la tienda</button>
+          <button className="bg-red-500/40 absolute right-4 top-2 font-medium px-3 py-1 rounded-xl hover:bg-red-500/60 transition-colors cu" onClick={() => setShowSubsAlert(true)}>Dar de baja</button>
           <div className="p-8">
             
             {/* Sección de Imagen */}
@@ -336,7 +336,7 @@ const EditStoreForm = () => {
             {/* Botones */}
             <div className="flex gap-3 pt-4 justify-end">
               <button 
-                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20" 
+                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all" 
                 type="button"
                 onClick={updateStore}
               >

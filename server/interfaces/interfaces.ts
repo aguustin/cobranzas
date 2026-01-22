@@ -102,3 +102,12 @@ export interface GiftCardI{
     giftCode:string,
     giftMount:number
 }
+
+export interface BoxI{
+    storeId: string;
+    boxName:string;
+    isOpen:boolean;
+    boxDate: Date;
+    totalMoneyInBox: number;
+    boxDifferenceMoney:number;
+}

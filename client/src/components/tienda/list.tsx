@@ -48,7 +48,7 @@ const Lists = () => {
                             <p className="mt-2">{st.domicile}</p>
                             <div className="flex justify-end mt-3">
                                 <Link to={`/edit_store/${st._id}`} className="secondary-element py-2 px-3 font-medium mx-1">Editar</Link>
-                                <Link className="important-element py-2 px-3 font-medium mx-1" to="/">Ver</Link>
+                                <Link className="important-element py-2 px-3 font-medium mx-1" to={`/store_resume/${st._id}`}>Ver</Link>
                             </div>
                         </div>
                     </div>
