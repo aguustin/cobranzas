@@ -1,16 +1,15 @@
-import { ChevronLeft, Plus, Trash2, Upload } from "lucide-react";
-import { useState, useEffect } from "react";
-
-interface CreateStoreProps {
-    setHideEditStoreForm: React.Dispatch<React.SetStateAction<boolean>>;
-}
+import { ChevronLeft, Plus, Trash2, Upload, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { getStoreRequest, updateStoreRequest } from "../../api/storeRequests";
 
 interface FormDataBody  {
     storeName: string,
     domicile: string,
     identificationTaxNumber: number,
     phone: number,
-    storeEmail: string
+    storeEmail: string,
+    active: boolean
 }
 
 interface StoreTax {
@@ -20,27 +19,54 @@ interface StoreTax {
 
 type TaxName = 'IVA' | 'IIBB' | 'TASA_MUNICIPAL' | 'GANANCIAS' | 'OTROS'
 
-const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
+const EditStoreForm = () => {
+  const { storeId } = useParams<{ storeId: string}>();
 
-    const [storeImgFile, setStoreImgFile] = useState<File | null>(null)
-    const [imagePreview, setImagePreview] = useState()
-    const [taxes, setTaxes] = useState<StoreTax[]>([])
-    const [taxeCategory, setTaxeCategory] = useState<TaxName>('IVA')
-    const [percentage, setPercentage] = useState<number>()
-    const [formData, setFormData] = useState<FormDataBody>({})
+  const [storeImgFile, setStoreImgFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>()
+  const [taxes, setTaxes] = useState<StoreTax[]>([])
+  const [taxeCategory, setTaxeCategory] = useState<TaxName>('IVA')
+  const [percentage, setPercentage] = useState<number>()
+  const [storeData, setStoreData] = useState<FormDataBody>({  
+        storeName: "",
+        domicile: "",
+        identificationTaxNumber: 0,
+        phone: 0,
+        storeEmail: "",
+        active: true
+  })
+  const [showSubsAlert, setShowSubsAlert] = useState<boolean>(false)
+  const [active, setActive] = useState<boolean>()
 
-
+  useEffect(() => {
+    const getStoreFunc = async () => {
+      const res = await getStoreRequest({storeId})
+      console.log(res.data.storeImg)
+      setImagePreview(res.data.storeImg)
+      setTaxes(res.data.storeTaxes)
+      setStoreData({
+        storeName:res.data.storeName,
+        domicile:res.data.domicile,
+        identificationTaxNumber: res.data.identificationTaxNumber,
+        phone: res.data.phone,
+        storeEmail:res.data.storeEmail,
+        active:res.data.active
+      })
+    } 
+    getStoreFunc()
+  }, [storeId])
     
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+  const handleChange = (e) => {
+      const { name, value } = e.target;
+      setStoreData(prev => ({
+          ...prev,
+          [name]: value
+      }));
+  };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    console.log(e.target.files?.[0])
+    const file = e.target.files?.[0];
     if (file) {
       setStoreImgFile(file);
       const reader = new FileReader();
@@ -62,11 +88,15 @@ const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
     setTaxes(prevTaxes => prevTaxes.filter((_, i) => i !== index));
   };
 
-  const updateStore = () => {
-    console.log('Tienda actualizada:', formData);
-    console.log('Impuestos:', taxes);
-    console.log('Imagen:', storeImgFile);
-    alert('Tienda actualizada exitosamente');
+  const updateStore = async (): Promise<number> => {
+      const formData = new FormData()
+      formData.append("storeId", storeId!)
+      formData.append("storeData", JSON.stringify(storeData))
+      formData.append("taxes", JSON.stringify(taxes))
+      formData.append("storeImg", storeImgFile!)
+      const res = await updateStoreRequest(formData)
+      console.log(res.data)
+      return 1
   };
 
   return (
@@ -90,7 +120,8 @@ const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
         </div>
 
         {/* Formulario */}
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
+        <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
+          <button onClick={() => setShowSubsAlert(true)}>Dar de baja la tienda</button>
           <div className="p-8">
             
             {/* Sección de Imagen */}
@@ -160,7 +191,7 @@ const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                 type="text" 
                 name="storeName"
-                value={formData.storeName}
+                value={storeData.storeName}
                 onChange={handleChange}
                 placeholder="Ej: Tienda Nova"
               />
@@ -175,7 +206,7 @@ const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                 type="text" 
                 name="domicile"
-                value={formData.domicile}
+                value={storeData.domicile}
                 onChange={handleChange}
                 placeholder="Dirección completa"
               />
@@ -193,7 +224,7 @@ const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                   type="number" 
                   name="identificationTaxNumber"
-                  value={formData.identificationTaxNumber}
+                  value={storeData.identificationTaxNumber}
                   onChange={handleChange}
                   placeholder="000"
                   min="0"
@@ -209,7 +240,7 @@ const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                   type="number" 
                   name="phone"
-                  value={formData.phone}
+                  value={storeData.phone}
                   onChange={handleChange}
                   placeholder="Número de teléfono"
                 />
@@ -225,7 +256,7 @@ const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                 type="email" 
                 name="storeEmail"
-                value={formData.storeEmail}
+                value={storeData.storeEmail}
                 onChange={handleChange}
                 placeholder="email@ejemplo.com"
               />
@@ -242,7 +273,7 @@ const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
                 <div className="flex-1">
                   <select 
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer" 
-                    onChange={(e) => setTaxeCategory(e.target.value)}
+                    onChange={(e) => setTaxeCategory(e.target.value as TaxName)}
                     value={taxeCategory}
                   >
                     <option value="IVA">IVA</option>
@@ -311,12 +342,9 @@ const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
               >
                 Guardar Cambios
               </button>
-              <button 
-                className="cursor-pointer px-8 py-3 bg-gray-800 hover:bg-red-500/30 hover:text-white text-gray-400 rounded-lg font-semibold transition-all border border-gray-700"
-                onClick={() => setHideEditStoreForm(false)}
-              >
+              <Link to={'/store_list'} className="cursor-pointer px-8 py-3 bg-gray-800 hover:bg-red-500/30 hover:text-white text-gray-400 rounded-lg font-semibold transition-all border border-gray-700">
                 Cancelar
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -328,6 +356,15 @@ const EditStoreForm = ({setHideEditStoreForm}: CreateStoreProps) => {
           </p>
         </div>
       </div>
+      {showSubsAlert && 
+        <div>
+          <p>{active ? 'Deseas darle de alta a la tienda nuevamente?' : 'Si le das de baja la tienda no actualizara productos, precios ni clientes. Deseas continuar?' }</p>
+          <div>
+            <button onClick={() => setShowSubsAlert(!showSubsAlert)}>Cancelar</button>
+            <button>Confirmar</button>
+          </div>
+        </div>
+      }
     </div>
   );
 }

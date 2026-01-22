@@ -1,5 +1,4 @@
 import { useContext, useEffect, useState } from "react"
-import pruebaJpg from '../../assets/prueba.jpg'
 import { Link } from "react-router-dom"
 import CreateStore from "./createStore"
 import { listStoresRequest } from "../../api/storeRequests"
@@ -7,20 +6,29 @@ import ContextBody from "../../context"
 //import EditStoreForm from "./editStore"
 
 const Lists = () => {
+
+    type storeType = {
+        _id: string,
+        storeImg: string,
+        storeName: string,
+        domicile: string
+    }
+
     const {session} = useContext(ContextBody)
-    const [stores, setStores] = useState<[]>([])
+    const [stores, setStores] = useState<storeType[]>([])
     const [hideCreateStore, setHideCreateStore] = useState<boolean>(false)
-    const [hideEditStore, setHideEditStore] = useState<boolean>(false)
 
     useEffect(() => {
         const listStoresFunc = async () => {
+            console.log(session._id)
             const res = await listStoresRequest(session._id)
             setStores(res.data)
             console.log(res.data)
         }
         listStoresFunc()
-    }, [])
-    console.log(stores)
+    }, [session._id])
+    
+   console.log('sroes: ', stores)
     return(
         <>
         {!hideCreateStore && <div>
@@ -39,7 +47,7 @@ const Lists = () => {
                             <h3 className="text-xl font-medium">{st.storeName}</h3>
                             <p className="mt-2">{st.domicile}</p>
                             <div className="flex justify-end mt-3">
-                                <button className="secondary-element py-2 px-3 font-medium mx-1" onClick={() => setHideEditStore(true)}>Editar</button>
+                                <Link to={`/edit_store/${st._id}`} className="secondary-element py-2 px-3 font-medium mx-1">Editar</Link>
                                 <Link className="important-element py-2 px-3 font-medium mx-1" to="/">Ver</Link>
                             </div>
                         </div>
@@ -48,14 +56,6 @@ const Lists = () => {
             </div>
         </div>}
          {hideCreateStore && (<CreateStore setHideCreateStoreForm={setHideCreateStore} />)}
-         {/*hideEditStore && (<EditStoreForm 
-            setHideEditStoreForm={setHideEditStore}
-            storeName={storeN}
-            domicile={}
-            identificationTaxNumber={}
-            phone={}
-            storeEmail={} >
-        )*/}
         </>
     )
 }

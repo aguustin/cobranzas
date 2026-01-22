@@ -1,8 +1,9 @@
-import { createContext, useEffect, useState } from "react"
+import {createContext, useEffect, useState } from "react"
+import type { PropsWithChildren } from "react";
 
 const ContextBody = createContext({})
 
-export const ContextBodyProvider = ({children}) => {
+export const ContextBodyProvider = ({children}: PropsWithChildren) => {
     const [session, setSession] = useState({})
 
     useEffect(() => {

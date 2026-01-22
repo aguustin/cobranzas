@@ -1,5 +1,5 @@
 import {Router} from "express"
-import { createStoreController, listStoresController } from "../controllers/storeController.ts"
+import { createStoreController, getStoreController, listStoresController, updateStoreController } from "../controllers/storeController.ts"
 const router = Router()
 
 import multer from "multer"
@@ -9,5 +9,9 @@ const upload = multer({ storage: storage })
 router.post('/create_store', upload.single('storeImg'), createStoreController)
 
 router.get('/get_all_stores/:sessionId', listStoresController)
+
+router.post('/get_store', getStoreController)
+
+router.post('/update_store', upload.single('storeImg'), updateStoreController)
 
 export default router

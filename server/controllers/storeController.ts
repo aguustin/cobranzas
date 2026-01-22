@@ -30,9 +30,10 @@ interface StoreBody {
 }
 
 const uploadFileToCloudinary = (file: Express.Multer.File): Promise<string> => {
+    console.log('se ejecuta')
     return new Promise((resolve, reject) => {
         cloudinary.uploader.upload_stream(
-            { resource_type: 'auto', folder: 'eventsGoTicket' },
+            { resource_type: 'auto', folder: 'cobranza_products' },
             (error, result) => {
                 if (error) {
                     console.error('Cloudinary upload error:', error);
@@ -48,7 +49,7 @@ const uploadFileToCloudinary = (file: Express.Multer.File): Promise<string> => {
 export const createStoreController = async (req: Request<{}, {}, StoreBody>, res: Response): Promise<Response> => {
 
     const {managerId, storeName, domicile, storePassword, identificationTaxNumber, phone, storeEmail, storeTaxes} = req.body
-
+    console.log('MANAGER ID ', managerId)
     const storeExists = await storeModel.findOne({storeName: storeName})
 
     if(storeExists){
@@ -87,17 +88,50 @@ export const createStoreController = async (req: Request<{}, {}, StoreBody>, res
     return res.status(200).json(1)
 }
 
-export const updateStoreController = async (req: Request<{}, {}, StoreBody & { storeId: string }>, res: Response): Promise<Response> => {
-    const {storeId, ...data} = req.body
-
+export const updateStoreController = async (req: Request<{}, {}, StoreBody>, res: Response): Promise<Response> => {
+    const {...data} = req.body
     const dataToUpdate = Object.fromEntries(Object.entries(data).filter(([_, value]) => value !== undefined))
+    
 
+    for (const key of Object.keys(dataToUpdate)) {
+        const value = dataToUpdate[key];
+
+        if (typeof value === 'string') {
+                try {
+                    const parsed = JSON.parse(value);
+                    dataToUpdate[key] = parsed;
+                } catch (error) {
+                    console.log('')
+                }
+        
+        }
+
+    }
+    let storeImgUrl: string | undefined;
+
+    if(req.file){
+        storeImgUrl = await uploadFileToCloudinary(req.file)
+    }
+    
+    if(storeImgUrl) {
+        dataToUpdate.storeImg = storeImgUrl;
+    } 
+    
+    const { storeId, storeData, taxes, storeImg } = dataToUpdate;
+ 
     const updateResult = await storeModel.updateOne(
-        {_id: storeId},
+        {_id: dataToUpdate.storeId},
         {
-            $set:{ dataToUpdate }
+            $set:{ 
+                storeName: storeData.storeName,
+                domicile: storeData.domicile,
+                identificationTaxNumber: storeData.identificationTaxNumber,
+                phone: storeData.phone,
+                storeEmail:storeData.storeEmail,
+                storeTaxes: taxes,
+                storeImg: storeImg
+             },
         },
-        { runValidators: true }
     )
 
     if(updateResult.matchedCount === 0){
@@ -157,8 +191,8 @@ export const listStoresController = async (req: Request<{sessionId: string}>, re
 
 export const getStoreController = async (req: Request<{}, {}, {storeId: string}>, res: Response): Promise<Response> => {
     const {storeId} = req.body
-
+    console.log(storeId)
     const store = await storeModel.findOne({_id: storeId})
 
-    return res.status(200).json({store})
+    return res.send(store)
 }

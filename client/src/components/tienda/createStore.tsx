@@ -1,7 +1,6 @@
  import { ChevronLeft } from "lucide-react";
 import { useContext, useState } from "react";
 import ContextBody from "../../context";
-import type { AxiosResponse } from "axios";
 import { createStoreRequest } from "../../api/storeRequests";
 
 interface CreateStoreProps {
