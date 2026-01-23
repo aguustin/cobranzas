@@ -1,5 +1,5 @@
 import {Router} from "express"
-import { createStoreController, getStoreController, listStoresController, updateStoreController } from "../controllers/storeController.ts"
+import { createStoreController, getAllStatisticsController, getStoreController, listStoresController, updateStoreController } from "../controllers/storeController.ts"
 const router = Router()
 
 import multer from "multer"

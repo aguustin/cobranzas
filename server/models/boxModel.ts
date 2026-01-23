@@ -10,6 +10,9 @@ const BoxSchema = new mongoose.Schema<BoxI>({
     boxDifferenceMoney:{type: Number}
 })
 
+BoxSchema.index({ storeId: 1, boxDate: 1 });
+BoxSchema.index({ storeId: 1});
+
 const boxesModel = mongoose.model("boxesModel", BoxSchema)
 
 export default boxesModel

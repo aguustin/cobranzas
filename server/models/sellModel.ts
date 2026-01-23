@@ -19,6 +19,10 @@ const SellSchema = new mongoose.Schema<SellI>({
     userAtm:{type: String}
 })
 
+SellSchema.index({ storeId: 1, sellDate: 1 }); 
+SellSchema.index({ sellDate: 1 });             
+SellSchema.index({ storeId: 1, sellQuantity: 1 });
+
 const sellModel = mongoose.model('Sell', SellSchema)
     
 export default sellModel

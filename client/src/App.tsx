@@ -13,6 +13,7 @@ import RegisterManager from './components/forms/registerManager'
 import { ContextBodyProvider } from './context'
 import EditStoreForm from './components/tienda/editStore'
 import StoreResume from './components/tienda/storeResume'
+import StoreStatistics from './components/tienda/storeStatistics'
 
 function AppRoutes() {
   const location = useLocation();
@@ -36,6 +37,7 @@ function AppRoutes() {
                 <Route path='/store_list' element={<Lists/>}/>
                 <Route path='/store_resume/:storeId' element={<StoreResume/>} />
                 <Route path='/edit_store/:storeId' element={<EditStoreForm/>}></Route>
+                <Route path='/store_statistics/:storeId/:storeName' element={<StoreStatistics/>}></Route>
                 <Route path='/a' element={<Sells/>}/>
                 <Route path='/a' element={<Stocki/>}/>
               </Routes>

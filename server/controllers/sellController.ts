@@ -365,3 +365,180 @@ export const getDayDataController = async (req:Request<{storeId: string}>, res:R
 
     return res.status(200).json({store, sells, box})
 }
+
+type StatsFilter = 'dia' | 'semana' | 'mes' | 'año' | 'siempre';
+
+
+export const getDateRange = (filter: StatsFilter) => {
+  const now = new Date();
+
+  switch (filter) {
+    case 'dia': {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+
+      return { start, end };
+    }
+
+    case 'semana': {
+      const start = new Date(now);
+      start.setDate(now.getDate() - now.getDay());
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date();
+      return { start, end };
+    }
+
+    case 'mes': {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      return { start, end };
+    }
+
+    case 'año': {
+      const start = new Date(now.getFullYear(), 0, 1);
+      const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+      return { start, end };
+    }
+
+    case 'siempre': {
+      return {
+        start: new Date(0),
+        end: new Date()
+      };
+    }
+
+    default:
+      throw new Error('Filtro inválido');
+  }
+};
+
+
+const getGroupByFilter = (filter: StatsFilter) => {
+  switch (filter) {
+    case 'dia':
+      return {
+        _id: { $hour: "$sellDate" },
+        label: { $concat: [{ $toString: { $hour: "$sellDate" } }, ":00"] }
+      };
+
+    case 'semana':
+      return {
+        _id: { $dayOfWeek: "$sellDate" },
+        label: {
+          $arrayElemAt: [
+            ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+            { $subtract: [{ $dayOfWeek: "$sellDate" }, 1] }
+          ]
+        }
+      };
+
+    case 'mes':
+      return {
+        _id: { $week: "$sellDate" },
+        label: { $concat: ["Sem ", { $toString: { $week: "$sellDate" } }] }
+      };
+
+    case 'año':
+      return {
+        _id: { $month: "$sellDate" },
+        label: {
+          $arrayElemAt: [
+            ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+            { $subtract: [{ $month: "$sellDate" }, 1] }
+          ]
+        }
+      };
+
+    case 'siempre':
+      return {
+        _id: { $year: "$sellDate" },
+        label: { $toString: { $year: "$sellDate" } }
+      };
+  }
+};
+
+export const getAllStatisticsController = async (req:Request<{storeId: string}, {}, {filter?: StatsFilter, start?:string, end?:string}>, res:Response): Promise<Response> => {
+  const {storeId} = req.params
+
+  const { filter = 'dia', start, end } = req.query;
+
+  let startDate: Date;
+  let endDate: Date;
+
+  if (start && end) {
+    startDate = new Date(start);
+    endDate = new Date(end);
+
+    if (startDate > endDate) {
+      return res.status(400).json({ message: 'Rango de fechas inválido' });
+    }
+  } else {
+    // si no vienen fechas, usamos getDateRange
+    const range = getDateRange(filter);
+    startDate = range.start;
+    endDate = range.end;
+  }
+
+  const groupConfig = getGroupByFilter(filter);
+
+  const [sells, efectivo] = await Promise.all([
+    // 🔹 SELLS
+    sellModel.aggregate([
+      {
+        $match: {
+          storeId,
+          sellDate: { $gte: start, $lte: end }
+        }
+      },
+      {
+        $group: {
+          _id: groupConfig._id,
+          cantidad: { $sum: 1 },
+          productos: { $sum: "$sellQuantity" },
+          ventas: { $sum: "$sellTotal" }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          time: {
+            $concat: [{ $toString: "$_id" }, ":00"]
+          },
+          cantidad: 1,
+          productos: 1,
+          ventas: 1
+        }
+      },
+      { $sort: { time: 1 } }
+    ]),
+
+    // 🔹 BOXES (EFECTIVO)
+    boxesModel.aggregate([
+      {
+        $match: {
+          storeId,
+          boxDate: { $gte: start, $lte: end }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          efectivo: { $sum: "$totalMoneyInBox" }
+        }
+      }
+    ])
+  ]);
+
+  const efectivoTotal = efectivo[0]?.efectivo || 0;
+
+  return res.json(
+    sells.map(s => ({
+      ...s,
+      efectivo: efectivoTotal
+    }))
+  );
+};

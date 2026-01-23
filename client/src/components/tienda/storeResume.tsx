@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Store, Clock, DollarSign, ShoppingBag, TrendingUp, AlertCircle, Check, X } from 'lucide-react';
 import { getDayDataRequest } from '../../api/storeRequests';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
   type StoreType = {
         _id: string,
@@ -39,8 +39,7 @@ export const StoreResume = () => {
     return () => clearInterval(timer);
   }, []);*/
 
-    useEffect(() => {
-      console.log('adasdasdasd')
+  useEffect(() => {
       const getStoreFunc = async () => {
           const res = await getDayDataRequest({storeId})
           setStoreData(res.data.store)
@@ -49,23 +48,9 @@ export const StoreResume = () => {
       }
       getStoreFunc()
   }, [])
+
   console.log(storeData)
-  // Datos de ejemplo
- /* const tiendaData = {
-    nombre: "Tienda Principal",
-    sucursal: "SUC-001",
-    estado: "abierta", // abierta, cerrada
-    cajaEstado: "abierta", // abierta, cerrada
-    turno: "Mañana", // Mañana, Tarde, Noche
-    ventas: {
-      total: 45678.50,
-      cantidad: 127,
-      clientes: 89,
-      productos: 342,
-      efectivo: 28450.00,
-      boxDifferenceMoney: -125.50 // Negativo = faltante, Positivo = sobrante
-    }
-  };*/
+  
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -170,7 +155,7 @@ export const StoreResume = () => {
               {/* Turno Activo */}
               <div className="p-3 rounded-lg border-2 bg-blue-500/10 border-blue-500/30">
                 <span className="text-sm text-gray-400 block">Turno Activo</span>
-                <p className="font-bold text-blue-400 mt-1">{/*tiendaData.turno*/}</p>
+                <p className="font-bold text-blue-400 mt-1">Mañana{/*tiendaData.turno*/}</p>
               </div>
 
               {/* Acciones Rápidas */}
@@ -188,10 +173,13 @@ export const StoreResume = () => {
 
         {/* Métricas del Día */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-            <TrendingUp className="text-indigo-500" size={28} />
-            Resumen del Día
-          </h2>
+          <div className='flex items-center'>
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <TrendingUp className="text-indigo-500" size={28} />
+              Resumen del Día
+            </h2>
+            <Link className='mb-6 gap-2 font-bold ml-6 bg-gradient-to-r from-indigo-700 to-indigo-800 py-2 px-4 rounded-lg shadow-xl hover:shadow-indigo-500/10 hover:px-5 transition-all' to={`/store_statistics/${storeId}/${storeData?.storeName}`}>Ver estadisticas</Link>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
@@ -204,7 +192,7 @@ export const StoreResume = () => {
                 <span className="text-xs text-indigo-400 font-semibold bg-indigo-500/20 px-3 py-1 rounded-full">HOY</span>
               </div>
               <h3 className="text-gray-400 text-sm mb-1">Ventas del Día</h3>
-              <p className="text-3xl font-bold text-white mb-2">{formatCurrency(storeData?.storeTotalEarned)}</p>
+              <p className="text-3xl font-bold text-white mb-2">{formatCurrency(storeData?.storeTotalEarned || 0)}</p>
               <div className="flex items-center gap-2 text-green-400 text-sm">
                 <TrendingUp size={16} />
                 <span>+12.5% vs ayer</span>
@@ -222,7 +210,7 @@ export const StoreResume = () => {
               <h3 className="text-gray-400 text-sm mb-1">Cantidad de Ventas</h3>
               <p className="text-3xl font-bold text-white mb-2">{sellsData?.docCount}</p>
               <div className="flex items-center gap-2 text-purple-400 text-sm">
-                <span>Ticket promedio: {formatCurrency(sellsData?.docCount / storeData?.storeSubTotalEarned)}</span>
+                <span>Ticket promedio: {formatCurrency(sellsData?.docCount / storeData?.storeSubTotalEarned || 0)}</span>
               </div>
             </div>
 
@@ -265,9 +253,9 @@ export const StoreResume = () => {
                 <span className="text-xs text-yellow-400 font-semibold bg-yellow-500/20 px-3 py-1 rounded-full">EFECTIVO</span>
               </div>
               <h3 className="text-gray-400 text-sm mb-1">Efectivo en Caja</h3>
-              <p className="text-3xl font-bold text-white mb-2">{formatCurrency(boxData?.totalMoneyInBox)}</p>
+              <p className="text-3xl font-bold text-white mb-2">{formatCurrency(boxData?.totalMoneyInBox  || 0)}</p>
               <div className="flex items-center gap-2 text-yellow-400 text-sm">
-                <span>{((boxData?.totalMoneyInBox / sellsData?.docCount) * 100).toFixed(1)}% del total</span>
+                <span>{((boxData?.totalMoneyInBox / sellsData?.docCount || 0) * 100).toFixed(1)}% del total</span>
               </div>
             </div>
 
@@ -313,7 +301,7 @@ export const StoreResume = () => {
               }`}>
                 {boxData?.boxDifferenceMoney === 0 
                   ? 'Sin boxDifferenceMoney' 
-                  : formatCurrency(Math.abs(boxData?.boxDifferenceMoney))}
+                  : formatCurrency(Math.abs(boxData?.boxDifferenceMoney  || 0))}
               </p>
               <div className={`flex items-center gap-2 text-sm ${
                 boxData?.boxDifferenceMoney === 0 
