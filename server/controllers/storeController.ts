@@ -128,6 +128,7 @@ export const updateStoreController = async (req: Request<{}, {}, StoreBody>, res
                 identificationTaxNumber: storeData.identificationTaxNumber,
                 phone: storeData.phone,
                 storeEmail:storeData.storeEmail,
+                active: storeData.active,
                 storeTaxes: taxes,
                 storeImg: storeImg
              },

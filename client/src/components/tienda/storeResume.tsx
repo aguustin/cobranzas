@@ -1,35 +1,57 @@
 import { useState, useEffect } from 'react';
-import { Store, Clock, DollarSign, ShoppingBag, Users, TrendingUp, AlertCircle, Check, X } from 'lucide-react';
-import { getStoreBoxRequest, getStoreRequest } from '../../api/storeRequests';
+import { Store, Clock, DollarSign, ShoppingBag, TrendingUp, AlertCircle, Check, X } from 'lucide-react';
+import { getDayDataRequest } from '../../api/storeRequests';
 import { useParams } from 'react-router-dom';
+
+  type StoreType = {
+        _id: string,
+        storeImg: string,
+        storeName: string,
+        domicile: string,
+        active: boolean,
+        storeSubTotalEarned: number,
+        storeTotalEarned: number
+    }
+
+    type BoxType = {
+      isOpen: boolean,
+      boxDifferenceMoney: number
+    }
+
+  type DailySellData = {
+    _id: string | null;
+    totalSold: number;
+    docCount: number;
+  }
 
 export const StoreResume = () => {
   const { storeId } = useParams<{ storeId: string}>();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [storeData, setStoreData] = useState<[]>();
-  const [boxData, setBoxData] = useState<[]>();
+  const [storeData, setStoreData] = useState<StoreType | null>(null);
+  const [sellsData, setSellsData] = useState<DailySellData | null>(null);
+  const [boxData, setBoxData] = useState<BoxType | null>(null);
 
   // Actualizar el reloj cada segundo
-  useEffect(() => {
+  /*useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, []);*/
 
     useEffect(() => {
-    const getStoreFunc = async () => {
-        const res = await getStoreRequest({storeId})
-        setStoreData(res.data)
-
-        const resB = await getStoreBoxRequest({storeId})
-        setBoxData(resB.data)
-     }
-     getStoreFunc()
+      console.log('adasdasdasd')
+      const getStoreFunc = async () => {
+          const res = await getDayDataRequest({storeId})
+          setStoreData(res.data.store)
+          setSellsData(res.data.sells)
+          setBoxData(res.data.box)
+      }
+      getStoreFunc()
   }, [])
-
+  console.log(storeData)
   // Datos de ejemplo
-  const tiendaData = {
+ /* const tiendaData = {
     nombre: "Tienda Principal",
     sucursal: "SUC-001",
     estado: "abierta", // abierta, cerrada
@@ -41,9 +63,9 @@ export const StoreResume = () => {
       clientes: 89,
       productos: 342,
       efectivo: 28450.00,
-      diferencia: -125.50 // Negativo = faltante, Positivo = sobrante
+      boxDifferenceMoney: -125.50 // Negativo = faltante, Positivo = sobrante
     }
-  };
+  };*/
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -75,6 +97,7 @@ export const StoreResume = () => {
         
         {/* Header Sticky - Información de la Tienda */}
         <div className="sticky top-0 z-10 bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 rounded-xl shadow-2xl mb-8 overflow-hidden">
+         
           <div className="p-6">
             {/* Fila Principal */}
             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
@@ -83,9 +106,9 @@ export const StoreResume = () => {
                 <div className="p-3 bg-gradient-to-r from-gray-700 to-gray-950 rounded-xl">
                   <Store size={26} />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-white">{tiendaData.nombre}</h1>
-                  <p className="text-gray-400 text-sm">Sucursal: <span className="text-indigo-400 font-semibold">{tiendaData.sucursal}</span></p>
+                <div key={storeData?._id}>
+                  <h1 className="text-2xl font-bold text-white">{storeData?.storeName}</h1>
+                  <p className="text-gray-400 text-sm">Sucursal: <span className="text-indigo-400 font-semibold">{storeData?.domicile}</span></p>
                 </div>
               </div>
 
@@ -103,50 +126,51 @@ export const StoreResume = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {/* Estado Tienda */}
               <div className={`p-3 rounded-lg border-2 ${
-                tiendaData.estado === 'abierta' 
-                  ? 'bg-green-500/10 border-green-500/30' 
+                storeData?.active === true  
+                  ? 'bg-green-500/10 border-green-500/30'
                   : 'bg-red-500/10 border-red-500/30'
               }`}>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-400">Estado Tienda</span>
-                  {tiendaData.estado === 'abierta' ? (
+                  {storeData?.active === true ? (
                     <Check size={18} className="text-green-400" />
                   ) : (
                     <X size={18} className="text-red-400" />
                   )}
                 </div>
                 <p className={`font-bold mt-1 ${
-                  tiendaData.estado === 'abierta' ? 'text-green-400' : 'text-red-400'
+                  storeData?.active === true ? 'text-green-400' : 'text-red-400'
                 }`}>
-                  {tiendaData.estado === 'abierta' ? 'Abierta' : 'Cerrada'}
+                  {storeData?.active === true ? 'Abierta' : 'Cerrada'}
                 </p>
               </div>
 
               {/* Estado Caja */}
               <div className={`p-3 rounded-lg border-2 ${
-                tiendaData.cajaEstado === 'abierta' 
+                boxData?.isOpen === true
                   ? 'bg-green-500/10 border-green-500/30' 
                   : 'bg-red-500/10 border-red-500/30'
               }`}>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-400">Caja</span>
-                  {tiendaData.cajaEstado === 'abierta' ? (
+                  {boxData?.isOpen === true ? (
                     <Check size={18} className="text-green-400" />
                   ) : (
                     <X size={18} className="text-red-400" />
                   )}
                 </div>
                 <p className={`font-bold mt-1 ${
-                  tiendaData.cajaEstado === 'abierta' ? 'text-green-400' : 'text-red-400'
+                  boxData?.isOpen === true ? 'text-green-400' : 'text-red-400'
                 }`}>
-                  {tiendaData.cajaEstado === 'abierta' ? 'Abierta' : 'Cerrada'}
+                  {boxData?.isOpen === true ? 'Abierta' : 'Cerrada'}
                 </p>
               </div>
+              
 
               {/* Turno Activo */}
               <div className="p-3 rounded-lg border-2 bg-blue-500/10 border-blue-500/30">
                 <span className="text-sm text-gray-400 block">Turno Activo</span>
-                <p className="font-bold text-blue-400 mt-1">{tiendaData.turno}</p>
+                <p className="font-bold text-blue-400 mt-1">{/*tiendaData.turno*/}</p>
               </div>
 
               {/* Acciones Rápidas */}
@@ -180,7 +204,7 @@ export const StoreResume = () => {
                 <span className="text-xs text-indigo-400 font-semibold bg-indigo-500/20 px-3 py-1 rounded-full">HOY</span>
               </div>
               <h3 className="text-gray-400 text-sm mb-1">Ventas del Día</h3>
-              <p className="text-3xl font-bold text-white mb-2">{formatCurrency(tiendaData.ventas.total)}</p>
+              <p className="text-3xl font-bold text-white mb-2">{formatCurrency(storeData?.storeTotalEarned)}</p>
               <div className="flex items-center gap-2 text-green-400 text-sm">
                 <TrendingUp size={16} />
                 <span>+12.5% vs ayer</span>
@@ -196,13 +220,13 @@ export const StoreResume = () => {
                 <span className="text-xs text-purple-400 font-semibold bg-purple-500/20 px-3 py-1 rounded-full">TRANSACCIONES</span>
               </div>
               <h3 className="text-gray-400 text-sm mb-1">Cantidad de Ventas</h3>
-              <p className="text-3xl font-bold text-white mb-2">{tiendaData.ventas.cantidad}</p>
+              <p className="text-3xl font-bold text-white mb-2">{sellsData?.docCount}</p>
               <div className="flex items-center gap-2 text-purple-400 text-sm">
-                <span>Ticket promedio: {formatCurrency(tiendaData.ventas.total / tiendaData.ventas.cantidad)}</span>
+                <span>Ticket promedio: {formatCurrency(sellsData?.docCount / storeData?.storeSubTotalEarned)}</span>
               </div>
             </div>
 
-            {/* Clientes Atendidos */}
+            {/* Clientes Atendidos 
             <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/30 rounded-xl p-6 shadow-xl hover:shadow-blue-500/10 transition-all">
               <div className="flex items-center justify-between mb-4">
                 <div className="p-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl">
@@ -216,7 +240,7 @@ export const StoreResume = () => {
                 <span>{((tiendaData.ventas.clientes / tiendaData.ventas.cantidad) * 100).toFixed(1)}% tasa de conversión</span>
               </div>
             </div>
-
+          */}
             {/* Productos Vendidos */}
             <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 border border-green-700/30 rounded-xl p-6 shadow-xl hover:shadow-green-500/10 transition-all">
               <div className="flex items-center justify-between mb-4">
@@ -226,9 +250,9 @@ export const StoreResume = () => {
                 <span className="text-xs text-green-400 font-semibold bg-green-500/20 px-3 py-1 rounded-full">UNIDADES</span>
               </div>
               <h3 className="text-gray-400 text-sm mb-1">Productos Vendidos</h3>
-              <p className="text-3xl font-bold text-white mb-2">{tiendaData.ventas.productos}</p>
+              <p className="text-3xl font-bold text-white mb-2">{sellsData?.totalSold}</p>
               <div className="flex items-center gap-2 text-green-400 text-sm">
-                <span>{(tiendaData.ventas.productos / tiendaData.ventas.cantidad).toFixed(1)} productos por venta</span>
+                <span>{(sellsData?.docCount / 2).toFixed(1)} productos por venta</span>
               </div>
             </div>
 
@@ -241,67 +265,67 @@ export const StoreResume = () => {
                 <span className="text-xs text-yellow-400 font-semibold bg-yellow-500/20 px-3 py-1 rounded-full">EFECTIVO</span>
               </div>
               <h3 className="text-gray-400 text-sm mb-1">Efectivo en Caja</h3>
-              <p className="text-3xl font-bold text-white mb-2">{formatCurrency(tiendaData.ventas.efectivo)}</p>
+              <p className="text-3xl font-bold text-white mb-2">{formatCurrency(boxData?.totalMoneyInBox)}</p>
               <div className="flex items-center gap-2 text-yellow-400 text-sm">
-                <span>{((tiendaData.ventas.efectivo / tiendaData.ventas.total) * 100).toFixed(1)}% del total</span>
+                <span>{((boxData?.totalMoneyInBox / sellsData?.docCount) * 100).toFixed(1)}% del total</span>
               </div>
             </div>
 
             {/* Diferencia de Caja */}
             <div className={`bg-gradient-to-br ${
-              tiendaData.ventas.diferencia === 0 
+              boxData?.boxDifferenceMoney === 0 
                 ? 'from-gray-900/40 to-gray-800/20 border-gray-700/30' 
-                : tiendaData.ventas.diferencia > 0 
+                : boxData?.boxDifferenceMoney > 0 
                   ? 'from-green-900/40 to-green-800/20 border-green-700/30' 
                   : 'from-red-900/40 to-red-800/20 border-red-700/30'
             } border rounded-xl p-6 shadow-xl transition-all`}>
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 rounded-xl ${
-                  tiendaData.ventas.diferencia === 0 
+                  boxData?.boxDifferenceMoney === 0 
                     ? 'bg-gray-600' 
-                    : tiendaData.ventas.diferencia > 0 
+                    : boxData?.boxDifferenceMoney > 0 
                       ? 'bg-green-600' 
                       : 'bg-red-600'
                 }`}>
                   <AlertCircle size={24} />
                 </div>
                 <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                  tiendaData.ventas.diferencia === 0 
+                  boxData?.boxDifferenceMoney === 0 
                     ? 'text-gray-400 bg-gray-500/20' 
-                    : tiendaData.ventas.diferencia > 0 
+                    : boxData?.boxDifferenceMoney > 0 
                       ? 'text-green-400 bg-green-500/20' 
                       : 'text-red-400 bg-red-500/20'
                 }`}>
-                  {tiendaData.ventas.diferencia === 0 
+                  {boxData?.boxDifferenceMoney === 0 
                     ? 'OK' 
-                    : tiendaData.ventas.diferencia > 0 
+                    : boxData?.boxDifferenceMoney > 0 
                       ? 'SOBRANTE' 
                       : 'FALTANTE'}
                 </span>
               </div>
               <h3 className="text-gray-400 text-sm mb-1">Diferencia de Caja</h3>
               <p className={`text-3xl font-bold mb-2 ${
-                tiendaData.ventas.diferencia === 0 
+                boxData?.boxDifferenceMoney === 0 
                   ? 'text-white' 
-                  : tiendaData.ventas.diferencia > 0 
+                  : boxData?.boxDifferenceMoney > 0 
                     ? 'text-green-400' 
                     : 'text-red-400'
               }`}>
-                {tiendaData.ventas.diferencia === 0 
-                  ? 'Sin diferencia' 
-                  : formatCurrency(Math.abs(tiendaData.ventas.diferencia))}
+                {boxData?.boxDifferenceMoney === 0 
+                  ? 'Sin boxDifferenceMoney' 
+                  : formatCurrency(Math.abs(boxData?.boxDifferenceMoney))}
               </p>
               <div className={`flex items-center gap-2 text-sm ${
-                tiendaData.ventas.diferencia === 0 
+                boxData?.boxDifferenceMoney === 0 
                   ? 'text-gray-400' 
-                  : tiendaData.ventas.diferencia > 0 
+                  : boxData?.boxDifferenceMoney > 0 
                     ? 'text-green-400' 
                     : 'text-red-400'
               }`}>
                 <span>
-                  {tiendaData.ventas.diferencia === 0 
+                  {boxData?.boxDifferenceMoney === 0 
                     ? 'Caja cuadrada' 
-                    : tiendaData.ventas.diferencia > 0 
+                    : boxData?.boxDifferenceMoney > 0 
                       ? 'Hay dinero extra en caja' 
                       : 'Falta dinero en caja'}
                 </span>

@@ -36,7 +36,7 @@ const EditStoreForm = () => {
         active: true
   })
   const [showSubsAlert, setShowSubsAlert] = useState<boolean>(false)
-  const [active, setActive] = useState<boolean>()
+  const [active, setActive] = useState<boolean>(true)
 
   useEffect(() => {
     const getStoreFunc = async () => {
@@ -52,6 +52,7 @@ const EditStoreForm = () => {
         storeEmail:res.data.storeEmail,
         active:res.data.active
       })
+      setActive(res.data.active)
     } 
     getStoreFunc()
   }, [storeId])
@@ -94,6 +95,7 @@ const EditStoreForm = () => {
       formData.append("storeData", JSON.stringify(storeData))
       formData.append("taxes", JSON.stringify(taxes))
       formData.append("storeImg", storeImgFile!)
+      formData.append("active", String(active))
       const res = await updateStoreRequest(formData)
       console.log(res.data)
       return 1
@@ -121,7 +123,7 @@ const EditStoreForm = () => {
 
         {/* Formulario */}
         <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
-          <button className="bg-red-500/40 absolute right-4 top-2 font-medium px-3 py-1 rounded-xl hover:bg-red-500/60 transition-colors cu" onClick={() => setShowSubsAlert(true)}>Dar de baja</button>
+          <button className="bg-red-500/40 absolute right-4 top-2 font-medium px-3 py-1 rounded-xl hover:bg-red-500/60 transition-colors cu" onClick={() => setActive(!active)}>Dar de baja</button>
           <div className="p-8">
             
             {/* Sección de Imagen */}

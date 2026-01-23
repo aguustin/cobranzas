@@ -14,4 +14,5 @@ router.post('/get_store', getStoreController)
 
 router.post('/update_store', upload.single('storeImg'), updateStoreController)
 
+
 export default router

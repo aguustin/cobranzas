@@ -5,6 +5,7 @@ import  {  v4  as  uuidv4  }  from  'uuid' ;
 import { mp }  from "../lib/mp.ts";
 import voucherModel from "../models/voucherModel.ts";
 import boxesModel from "../models/boxModel.ts";
+import storeModel from "../models/storeModel.ts";
 
 interface ProductBody {
   storeId: string;
@@ -38,8 +39,8 @@ interface SellBody {
 }
 
 
-export const sellProductController = async (req: Request<{}, {}, { products: ProductBody[], storeId: string, giftMount:number, storeName: string, userAtm: string }>, res: Response ): Promise<Response> => {
-  const { products, storeId, giftMount, storeName, userAtm } = req.body;
+export const sellProductController = async (req: Request<{}, {}, { products: ProductBody[], storeId: string, giftMount:number, storeName: string, userAtm: string, boxId: string }>, res: Response ): Promise<Response> => {
+  const { products, storeId, giftMount, storeName, userAtm, boxId } = req.body;
 
   const paymentDiscounts: Record<number, number> = {
     1: 0,  // sin descuento
@@ -123,6 +124,51 @@ res.json({
         }
       );
 
+      const hoyInicio = new Date();
+      hoyInicio.setHours(0, 0, 0, 0);
+
+      const hoyFin = new Date();
+      hoyFin.setHours(23, 59, 59, 999);
+
+      const result = await storeModel.updateOne(
+        {
+          _id: product.storeId,
+          months: {
+            $elemMatch: {
+              monthDate: { $gte: hoyInicio, $lte: hoyFin }
+            }
+          }
+        },
+        {
+          $inc: {
+            "months.$.monthMount": product.subTotalPrice,
+            "months.$.taxesMonth": product.taxes,
+            storeSubTotalEarned: product.subTotalPrice,
+            storeTotalEarned: product.subTotalPrice - product.taxes
+          }
+        }
+      );
+
+      if (result.matchedCount === 0) {
+  await storeModel.updateOne(
+    { _id: product.storeId },
+    {
+      $push: {
+        months: {
+          monthDate: new Date(), // Date.now()
+          monthMount: product.subTotalPrice,
+          taxesMonth: product.taxes
+        }
+      },
+      $inc: {
+        storeSubTotalEarned: product.subTotalPrice,
+        storeTotalEarned: product.subTotalPrice - product.taxes
+      }
+    }
+  );
+}
+
+
     const netTotal:number = Math.max(0, product.subTotalPrice - product.taxes);
 
       await sellModel.create({
@@ -144,16 +190,6 @@ res.json({
     }
 
 ));
-
-  await boxesModel.updateOne(
-      {storeId: storeId},
-      {
-        $addToSet:{
-          boxDate: Date.now(),
-          totalMoneyInBox:getSubTotalforMp
-        }
-      }  
-   )
 
   return res.status(200).json({  //devolver el valor al frontend y llamar updateGiftCardController para mandarle el giftcode y remainingGiftCardMount desde el frontend
     message: "Venta realizada",
@@ -199,3 +235,74 @@ export const filterByMonthController = async (req: Request<{}, {}, {}, { storeId
 
   return res.status(200).json(orderSells);
 };
+
+export const getDayDataController = async (req:Request<{storeId: string}>, res:Response): Promise<Response> => {
+    const {storeId} = req.params
+
+    const hoyInicio = new Date();
+    hoyInicio.setHours(0, 0, 0, 0);
+
+    const hoyFin = new Date();
+    hoyFin.setHours(23, 59, 59, 999);
+
+    const [store, sells, box] = await Promise.all([
+  await storeModel.findOne(
+  { _id: storeId },
+  {
+    managerId: 1,
+    storeImg: 1,
+    storeName: 1,
+    storePassword: 1,
+    domicile: 1,
+    identificationTaxNumber: 1,
+    phone: 1,
+    storeEmail: 1,
+    moneyType: 1,
+    active: 1,
+    months: {
+      $filter: {
+            input: "$months",
+            as: "m",
+            cond: {
+              $and: [
+                { $gte: ["$$m.monthDate", hoyInicio] },
+                { $lte: ["$$m.monthDate", hoyFin] }
+              ]
+            }
+          }
+        }
+      }
+    ),
+    (async ()  => { 
+      const arr = await sellModel.aggregate([
+      { 
+        $match: { 
+          storeId: storeId,
+          sellDate: { $gte: hoyInicio, $lte: hoyFin }
+        } 
+      },
+      {
+       $group: {
+          _id: null, // o puedes poner "$storeId" si querés identificar
+          totalSold: { $sum: "$sellQuantity" },
+          docCount: { $sum: 1 } // esto cuenta la cantidad de documentos
+        }
+      }
+    ])
+    return arr[0] || { 
+      _id: null, 
+      totalSold: 0, 
+      docCount: 0 
+    };
+    })(),
+      boxesModel.findOne({
+        storeId: storeId,
+        boxDate: {
+          $gte: hoyInicio,
+          $lte: hoyFin
+        }
+      })
+    ]);
+
+    return res.status(200).json({store, sells, box})
+}
