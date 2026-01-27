@@ -6,8 +6,8 @@ const BoxSchema = new mongoose.Schema<BoxI>({
     boxName:{type: String},
     isOpen:{type:Boolean},
     boxDate:{type:Date},
-    totalMoneyInBox:{type: Number},
-    boxDifferenceMoney:{type: Number}
+    totalMoneyInBox:{type: Number, default: 0},
+    boxDifferenceMoney:{type: Number, default: 0}
 })
 
 BoxSchema.index({ storeId: 1, boxDate: 1 });

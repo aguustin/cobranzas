@@ -5,6 +5,6 @@ const router = Router()
 
 router.get('/get_day_data/:storeId', getDayDataController)
 
-router.get('/get_statistics', getAllStatisticsController)
+router.post('/get_statistics', getAllStatisticsController)
 
 export default router

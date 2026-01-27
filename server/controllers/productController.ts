@@ -96,12 +96,26 @@ export const addSizesController = async (req: Request<{}, {}, { storeId: string;
   }
 };
 
-export const listProductsController = async (req: Request<{}, {}, {storeId: string}>, res: Response) => {
-    const {storeId} = req.body
+export const listProductsController = async (req: Request<{}, {}, {storeId: string, filter: number}>, res: Response): Promise<Response> => {
+    const {storeId, filter} = req.body
 
-    const products = await productModel.find({storeId: storeId})
+    let products;
 
-    res.status(200).json({products})
+    switch (filter) {
+        case 1:
+            products = await productModel.find({storeId: storeId});
+            break;
+        case 2:
+            products = await productModel.find({storeId: storeId, productQuantity: {$lt: 20}});
+            break;
+        case 3:
+            products = await productModel.find({storeId: storeId}).sort({productQuantity: -1});
+            break;
+        default:
+            products = await productModel.find({storeId: storeId});
+    }
+
+    return res.status(200).json(products)
 }
 
 export const getProductById = async (req:Request<{productMongoId: string}>, res:Response): Promise<Response> => {

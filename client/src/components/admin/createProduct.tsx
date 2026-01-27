@@ -25,7 +25,7 @@ const CreateProduct = ({setHideCreateProduct}: CreateProductProps) => {
         const form = e.currentTarget;
 
         const productData: CreateProductBody = {
-                storeId:form.storeId.value,
+                storeId:form.storeId.value, //escribir el id a mano luego lo acomodo con parametros
                 productName:form.productName.value,
                 productPrice:form.productPrice.value,
                 productCategory:form.productCategory.value,

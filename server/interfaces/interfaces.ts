@@ -22,12 +22,9 @@ interface ColorI{
     sizes:SizeI[];
 }
 
-export interface StoreI {
-    store: string;
-}
 
 export interface ProductI {
-    storeId: StoreI[];
+    storeId: string;
     productId: string;
     productName: string;
     productPrice: number;

@@ -6,10 +6,10 @@ import { getAllStatisticsRequest } from '../../api/storeRequests';
 
 export const StoreStatistics = () => {
 
- const { storeId, storeName } = useParams<{ storeId:string, storeName: string}>();
+ const { storeId, storeName } = useParams<{ storeId: string, storeName: string}>();
 
     type DailySellData = {
-        _id: string | null;
+        id: string;
         cantidad: number;
         productos: number;
         ventas: number;
@@ -28,22 +28,31 @@ export const StoreStatistics = () => {
         diferencia: true
     });
 
-    const getAllStatisticsFunc = async () => {
-        const params: any = { filter: timeFilter };
-        
-        if (customStart && customEnd) {
-            params.start = customStart;
-            params.end = customEnd;
-        }
-
-        const query = new URLSearchParams(params).toString();
-        const res = await getAllStatisticsRequest(`${storeId}?${query}`);
-        setSellsData(res.data);
-    };
-
-   useEffect(() => {
+    
+    useEffect(() => {
+     const getAllStatisticsFunc = async () => {
+         const params: any = { filter: timeFilter };
+         
+         if (customStart && customEnd) {
+             params.start = customStart;
+             params.end = customEnd;
+         }
+ 
+         const query = {
+          storeId: storeId,
+          filter: params.filter,
+          start: params.start,
+          end: params.end
+         } ;
+         console.log(storeId, ' ', query)
+         const res = await getAllStatisticsRequest(query);
+         setSellsData(res.data);
+     };
         getAllStatisticsFunc()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [storeId, timeFilter])
+
+    console.log(sellsData)
 
  const chartDataByFilter = sellsData || [];
 
@@ -67,13 +76,12 @@ export const StoreStatistics = () => {
     }).format(amount);
   };
 
-  const toggleMetric = (metric) => {
+  const toggleMetric = (metric: string) => {
     setSelectedMetrics(prev => ({
       ...prev,
       [metric]: !prev[metric]
     }));
   };
-
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 p-8">
@@ -106,6 +114,14 @@ export const StoreStatistics = () => {
                 onChange={(e) => setCustomEnd(e.target.value)}
                 className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-gray-100"
             />
+            <select onChange={(e) => setTimeFilter(e.target.value)}>
+                <option value={'siempre'}>por fechas</option>
+                <option value={'dia'}>dia</option>
+                <option value={'semana'}>semana</option>
+                <option value={'mes'}>mes</option>
+                <option value={'anio'}>año</option>
+                <option value={'siempre'}>siempre</option>
+            </select>
             </div>
 
             <div className="flex items-center gap-3">

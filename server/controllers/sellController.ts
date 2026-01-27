@@ -366,7 +366,7 @@ export const getDayDataController = async (req:Request<{storeId: string}>, res:R
     return res.status(200).json({store, sells, box})
 }
 
-type StatsFilter = 'dia' | 'semana' | 'mes' | 'año' | 'siempre';
+type StatsFilter = 'dia' | 'semana' | 'mes' | 'anio' | 'siempre';
 
 
 export const getDateRange = (filter: StatsFilter) => {
@@ -398,7 +398,7 @@ export const getDateRange = (filter: StatsFilter) => {
       return { start, end };
     }
 
-    case 'año': {
+    case 'anio': {
       const start = new Date(now.getFullYear(), 0, 1);
       const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
       return { start, end };
@@ -442,7 +442,7 @@ const getGroupByFilter = (filter: StatsFilter) => {
         label: { $concat: ["Sem ", { $toString: { $week: "$sellDate" } }] }
       };
 
-    case 'año':
+    case 'anio':
       return {
         _id: { $month: "$sellDate" },
         label: {
@@ -461,11 +461,16 @@ const getGroupByFilter = (filter: StatsFilter) => {
   }
 };
 
-export const getAllStatisticsController = async (req:Request<{storeId: string}, {}, {filter?: StatsFilter, start?:string, end?:string}>, res:Response): Promise<Response> => {
-  const {storeId} = req.params
+type QueryBody = {
+  storeId: string,
+  filter:string,
+  start?:string,
+  end?:string
+}
 
-  const { filter = 'dia', start, end } = req.query;
-
+export const getAllStatisticsController = async (req:Request<{}, {}, {query: QueryBody}>, res:Response): Promise<Response> => {
+  const { storeId, filter, start, end } = req.body;
+  
   let startDate: Date;
   let endDate: Date;
 
