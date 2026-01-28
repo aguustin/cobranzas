@@ -14,10 +14,11 @@ interface ProductBody {
   productName: string;
   productImg: string;
   productPrice: number;
+  productCategory: string;
   productQuantity: number;
   productDiscount: number;
   paymentType: number;
-  taxes: number;
+  productTaxe: number;
   unityPrice: number;
   subTotalPrice: number;
   totalPrice: number;
@@ -26,9 +27,9 @@ interface ProductBody {
 
 
 
-export const registerProductController = async ( req: Request, res:Response): Promise<Response> => {
+export const registerProductController = async ( req: Request<{}, {}, ProductBody>, res:Response): Promise<Response> => {
     const {storeId, productName, productPrice, productCategory, productDiscount, productQuantity, productTaxe} = req.body
-
+    
     let imageUrl: string | undefined;
 
     if (req.file) {

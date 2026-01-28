@@ -333,6 +333,9 @@ export const StoreResume = () => {
           <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all">
             Arqueo de Caja
           </button>
+          <button className="px-6 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all">
+            <Link to={`/products/${storeId}`}>Lista de Productos</Link>
+          </button>
           <button className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg font-semibold transition-all border border-gray-700">
             Exportar Reporte
           </button>

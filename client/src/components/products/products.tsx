@@ -2,6 +2,7 @@ import { Package } from "lucide-react"
 import { useEffect, useState } from "react"
 import CreateProduct from "../admin/createProduct"
 import { listProductsRequest } from "../../api/productRequests"
+import { useParams } from "react-router-dom"
 
 const Products = () => {
    type ProductBody = {
@@ -12,7 +13,7 @@ const Products = () => {
     productQuantity:number,
     totalSells:number
    }
-   //const { storeId } = useParams<{ storeId: string}>();
+   const { storeId } = useParams<{ storeId: string}>();
    const [hideCreateProduct, setHideCreateProduct] = useState<boolean>(false)
    const [products, setProducts] = useState<ProductBody[]>([])
    const [filter, setFilter] = useState<number>(1)
@@ -20,7 +21,6 @@ const Products = () => {
 
         useEffect(() => {
             //funcion para listar productos
-            const storeId = '69715cef64fc5405c4d3115d' //aqui va el storeId
             const getProductsFilterFunc = async () => {
               const res = await listProductsRequest({storeId, filter});
               setProducts(res.data);
@@ -112,7 +112,7 @@ const Products = () => {
                         </div>
                       </div>
                 </>}
-                    {hideCreateProduct && (<CreateProduct setHideCreateProduct={setHideCreateProduct} />)}
+                    {hideCreateProduct && (<CreateProduct   setHideCreateProduct={setHideCreateProduct} storeId={storeId} />)}
                 </>
             )
     }

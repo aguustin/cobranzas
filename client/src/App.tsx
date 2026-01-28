@@ -32,7 +32,7 @@ function AppRoutes() {
                 <Route path='/signIn' element={<RegisterManager/>}/>
                 <Route path='/login' element={<LoginManager/>}/>
                 <Route path='/' element={<Dashboard/>}/>
-                <Route path='/products' element={<Products/>}/>
+                <Route path='/products/:storeId' element={<Products/>}/>
                 <Route path='/a' element={<Finances/>}/>
                 <Route path='/store_list' element={<Lists/>}/>
                 <Route path='/store_resume/:storeId' element={<StoreResume/>} />

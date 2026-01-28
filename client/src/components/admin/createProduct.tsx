@@ -5,14 +5,17 @@ import { ChevronLeft, Plus } from "lucide-react";
 
 interface CreateProductProps {
     setHideCreateProduct: React.Dispatch<React.SetStateAction<boolean>>;
+    storeId: string;
 }
+
+
 
 interface Category {
     id: string;
     name: string;
 }
 
-const CreateProduct = ({setHideCreateProduct}: CreateProductProps) => {
+const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => {
     const [message, setMessage] = useState<number>(0)
     const [categories, setCategories] = useState<Category[]>([])
 
@@ -25,7 +28,7 @@ const CreateProduct = ({setHideCreateProduct}: CreateProductProps) => {
         const form = e.currentTarget;
 
         const productData: CreateProductBody = {
-                storeId:form.storeId.value, //escribir el id a mano luego lo acomodo con parametros
+                storeId:storeId, //escribir el id a mano luego lo acomodo con parametros
                 productName:form.productName.value,
                 productPrice:form.productPrice.value,
                 productCategory:form.productCategory.value,
@@ -99,6 +102,7 @@ const CreateProduct = ({setHideCreateProduct}: CreateProductProps) => {
                 <button 
                   type="button"
                   className="flex items-center gap-2 px-4 py-3 secondary-element text-gray-200 rounded-lg font-medium transition-all border border-gray-700 hover:border-purple-700 whitespace-nowrap"
+                 
                 >
                   <Plus size={18} />
                   Nueva Categoría

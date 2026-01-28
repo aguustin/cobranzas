@@ -7,25 +7,12 @@ import ContextBody from "../../context"
 
 const Lists = () => {
 
-    type storeType = {
-        _id: string,
-        storeImg: string,
-        storeName: string,
-        domicile: string
-    }
-
-    const {session} = useContext(ContextBody)
-    const [stores, setStores] = useState<storeType[]>([])
+    const {session, stores, listStoresFunc} = useContext(ContextBody)
     const [hideCreateStore, setHideCreateStore] = useState<boolean>(false)
 
     useEffect(() => {
-        const listStoresFunc = async () => {
-            console.log(session._id)
-            const res = await listStoresRequest(session._id)
-            setStores(res.data)
-            console.log(res.data)
-        }
-        listStoresFunc()
+        console.log(stores)
+        listStoresFunc(session._id)
     }, [session._id])
     
    console.log('sroes: ', stores)
