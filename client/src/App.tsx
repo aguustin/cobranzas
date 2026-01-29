@@ -14,6 +14,8 @@ import { ContextBodyProvider } from './context'
 import EditStoreForm from './components/tienda/editStore'
 import StoreResume from './components/tienda/storeResume'
 import StoreStatistics from './components/tienda/storeStatistics'
+import EditProductForm from './components/products/editProduct'
+import ProductStatistics from './components/products/productStatistics'
 
 function AppRoutes() {
   const location = useLocation();
@@ -33,6 +35,8 @@ function AppRoutes() {
                 <Route path='/login' element={<LoginManager/>}/>
                 <Route path='/' element={<Dashboard/>}/>
                 <Route path='/products/:storeId' element={<Products/>}/>
+                <Route path='/edit_product/:storeId/:productId' element={<EditProductForm/>}></Route>
+                <Route path='/statistics_product/:storeId/:productId' element={<ProductStatistics/>}></Route>
                 <Route path='/a' element={<Finances/>}/>
                 <Route path='/store_list' element={<Lists/>}/>
                 <Route path='/store_resume/:storeId' element={<StoreResume/>} />

@@ -5,7 +5,7 @@ import clientModel from "../models/clientModel.ts";
 import { updateGiftCardController } from "./giftCardController.ts";
 import sellModel from "../models/sellModel.ts";
 import managerModel from "../models/managerModel.ts";
-import cloudinary from "../lib/cloudinary.ts";
+import cloudinary, { uploadFileToCloudinary } from "../lib/cloudinary.ts";
 
 
 interface ProductBody {
@@ -27,19 +27,21 @@ interface ProductBody {
 
 
 
-export const registerProductController = async ( req: Request<{}, {}, ProductBody>, res:Response): Promise<Response> => {
-    const {storeId, productName, productPrice, productCategory, productDiscount, productQuantity, productTaxe} = req.body
+export const registerProductController = async ( req: Request, res:Response): Promise<Response> => {
+    const {storeId, productName, productCategory} = req.body
     
     let imageUrl: string | undefined;
 
+    
+    const productPrice = Number(req.body.productPrice);
+    const productDiscount = Number(req.body.productDiscount ?? 0);
+    const productQuantity = Number(req.body.productQuantity);
+    const productTaxe = Number(req.body.productTaxe ?? 0);
+
     if (req.file) {
         // Subida a Cloudinary
-        const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
-            folder: 'cobranza_products',
-        });
-        imageUrl = uploadResponse.secure_url;
-    }
-
+        imageUrl = await uploadFileToCloudinary(req.file);
+    };
 
     if(storeId.length > 0 && productName.length > 0 && productPrice > 0 && productQuantity > 0){
         await productModel.create({
@@ -119,9 +121,9 @@ export const listProductsController = async (req: Request<{}, {}, {storeId: stri
     return res.status(200).json(products)
 }
 
-export const getProductById = async (req:Request<{productMongoId: string}>, res:Response): Promise<Response> => {
-    const {productMongoId} = req.params
-    const findProduct = await productModel.findOne({_id: productMongoId})
+export const getProductByIdController = async (req:Request<{storeId: string, productMongoId: string}>, res:Response): Promise<Response> => {
+    const {storeId, productMongoId} = req.params
+    const findProduct = await productModel.findOne({_id: productMongoId, storeId: storeId})
 
     if(findProduct){
       return res.status(200).json(findProduct)
@@ -138,17 +140,14 @@ export const getProductsByCategory = async (req:Request<{ storeId: string; produ
     res.status(200).json({category: getCategory})
 }
 
-export const updateProductController = async (req: Request<{}, {}, ProductBody & {productMongoId: string}>, res: Response) => {
-    const { productMongoId, ...data } = req.body
+export const updateProductController = async (req: Request<{}, {}, ProductBody & {storeId: string, productMongoId: string}>, res: Response) => {
+    const { storeId, productMongoId, ...data } = req.body
 
     let imageUrl: string | undefined;
 
     if (req.file) {
         // Subida a Cloudinary
-        const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
-            folder: 'cobranza_products',
-        });
-        imageUrl = uploadResponse.secure_url;
+        imageUrl = await uploadFileToCloudinary(req.file);
     }
 
     const productToUpdate = Object.fromEntries(Object.entries(data).filter(([_, value]) => value !== undefined))

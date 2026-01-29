@@ -2,7 +2,7 @@
 import { Request, Response } from "express";
 import storeModel from "../models/storeModel.ts";
 import * as bcrypt from "bcrypt-ts";
-import cloudinary from "../lib/cloudinary.ts";
+import cloudinary, { uploadFileToCloudinary } from "../lib/cloudinary.ts";
 
 interface ITax {
   taxName: 'IVA' | 'IIBB' | 'TASA_MUNICIPAL' | 'GANANCIAS' | 'OTROS';
@@ -28,23 +28,6 @@ interface StoreBody {
   storeSubTotalEarned:Number,
   storeTotalEarned:Number
 }
-
-const uploadFileToCloudinary = (file: Express.Multer.File): Promise<string> => {
-    console.log('se ejecuta')
-    return new Promise((resolve, reject) => {
-        cloudinary.uploader.upload_stream(
-            { resource_type: 'auto', folder: 'cobranza_products' },
-            (error, result) => {
-                if (error) {
-                    console.error('Cloudinary upload error:', error);
-                    return reject(error);
-                }
-                resolve(result!.secure_url);
-            }
-        ).end(file.buffer);
-    });
-};
-
 
 export const createStoreController = async (req: Request<{}, {}, StoreBody>, res: Response): Promise<Response> => {
 

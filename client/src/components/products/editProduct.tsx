@@ -1,18 +1,8 @@
+import { ChevronLeft, Plus, Trash2, Upload, Package } from "lucide-react";
 import { useEffect, useState } from "react";
-import { registerProductRequest } from "../../api/productRequests";
-import { ChevronLeft, Upload, Trash2, Plus, Package } from 'lucide-react';
+import { useParams } from "react-router-dom";
+import { getProductByIdRequest, updateProductRequest } from "../../api/productRequests";
 
-interface CreateProductProps {
-    setHideCreateProduct: React.Dispatch<React.SetStateAction<boolean>>;
-    storeId: string;
-}
-
-
-
-interface Category {
-    id: string;
-    name: string;
-}
 
 type ProductBody = {
     productName: string,
@@ -20,75 +10,78 @@ type ProductBody = {
     productCategory: string,
     productDiscount: number,
     productQuantity: number,
-    productTaxe: number,
-    productImg?: string
+    productTaxe: number
 }
 
-const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => {
-    const [message, setMessage] = useState<number>(0)
-    const [categories, setCategories] = useState<Category[]>([])
-    const [imagePreview, setImagePreview] = useState<string | ArrayBuffer | null>(null);
-    const [productImgFile, setProductImgFile] = useState<File | null>(null);
-    const [productData, setProductData] = useState<ProductBody>({
-            productName: '',
-            productPrice: 0,
-            productCategory: '',
-            productDiscount: 0,
-            productQuantity: 0,
-            productTaxe: 0
-    })
+
+const EditProductForm = () => {
+    const { storeId, productId } = useParams<{ storeId: string, productId: string}>();
+    const [imagePreview, setImagePreview] = useState('https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80');
+    const [productImgFile, setProductImgFile] = useState(null);
     
+    const [productData, setProductData] = useState<ProductBody>({
+        productName: '',
+        productPrice: 0,
+        productCategory: '',
+        productDiscount: 0,
+        productQuantity: 0,
+        productTaxe: 0
+    })
 
-    const registerProduct = async (e: React.FormEvent<HTMLFormElement>) => {
-         e.preventDefault();
-
-        const formData = new FormData();
-
-        formData.append('storeId', storeId);
-
-        // campos normales
-        Object.entries(productData).forEach(([key, value]) => {
-          formData.append(key, String(value));
-        });
-
-        // archivo
-        if (productImgFile) {
-          formData.append('productImg', productImgFile);
-        }
-        console.log('FORM DATA ', formData.get('productName'))
-        const success = await registerProductRequest(formData);
-        return setMessage(success.data)
-        
-    }
-
-     const numericFields = [
+    const numericFields = [
         'productPrice',
         'productDiscount',
         'productQuantity',
         'productTaxe'
     ];
 
-    const handleChange = (e) => {
-      const { name, value } = e.target;
-      setProductData(prev => ({
-        ...prev,
-        [name]: numericFields.includes(name) 
-          ? Number(value) 
-          : value
-      }));
-    };
-    
-    const handleImageChange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        setProductImgFile(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreview(reader.result);
-        };
-        reader.readAsDataURL(file);
-      }
-    };
+
+  // Categorías de ejemplo
+  const categories = [
+    { name: 'Camisas' },
+    { name: 'Pantalones' },
+    { name: 'Vestidos' },
+    { name: 'Chaquetas' },
+    { name: 'Accesorios' },
+  ];
+
+  useEffect(() => {
+        getProductByIdRequest({storeId, productMongoId: productId}).then(res => {
+            setProductData({
+                productName: res.data.productName,
+                productPrice: res.data.productPrice,
+                productCategory: res.data.productCategory,
+                productDiscount: res.data.productDiscount,
+                productQuantity: res.data.productQuantity,
+                productTaxe: res.data.productTaxe
+            })
+            setImagePreview(res.data.productImg)
+        })
+  }, []);
+  console.log('productData:', productData);
+
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProductData(prev => ({
+      ...prev,
+      [name]: numericFields.includes(name) 
+        ? Number(value) 
+        : value
+    }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProductImgFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const removeImage = () => {
     setImagePreview(null);
@@ -97,33 +90,48 @@ const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => 
     if (fileInput) fileInput.value = '';
   };
 
-    return(
-        
- <div className="min-h-screen bg-gray-950 text-gray-100 p-8">
-      <div className="max-w-3xl mx-auto">
+  const updateProduct = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData();
+    formData.append('storeId', storeId);
+    formData.append('productMongoId', productId);
+    Object.entries(productData).forEach(([key, value]) => {
+          formData.append(key, String(value));
+    });
+    if (productImgFile) {
+        formData.append('productImg', productImgFile);
+    }
+
+    await updateProductRequest(formData);
+    
+    alert('Producto actualizado exitosamente');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-gray-100 p-8">
+      <div className="max-w-4xl mx-auto">
         <div className="flex justify-between">
+          {/* Título */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Editar Producto</h1>
+            <p className="text-gray-400">Actualiza la información del producto</p>
+          </div>
           {/* Botón Volver */}
           <div className="mb-6">
             <button 
-              onClick={() => setHideCreateProduct(false)} 
-              className="flex items-center gap-2 mt-1 px-4 py-2.5 bg-indigo-600/50 hover:bg-indigo-700/50 text-white rounded-lg font-medium transition-all cursor-pointer"
+              className="flex items-center mt-1 gap-2 px-4 py-2.5 bg-indigo-600/50 hover:bg-indigo-700/50 text-white rounded-lg font-medium transition-all cursor-pointer"
             >
               <ChevronLeft size={20} />
               Volver
             </button>
           </div>
-
-          {/* Título */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Crear Nuevo Producto</h1>
-            <p className="text-gray-400">Completa la información del producto para agregarlo al inventario</p>
-          </div>
         </div>
 
         {/* Formulario */}
-        <form onSubmit={(e) => registerProduct(e)} className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
           <div className="p-8">
-               {/* Sección de Imagen */}
+            
+            {/* Sección de Imagen */}
             <div className="mb-8 pb-8 border-b border-gray-700">
               <label className="block text-sm font-semibold text-gray-400 mb-4">
                 Imagen del Producto
@@ -180,15 +188,17 @@ const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => 
                 </div>
               </div>
             </div>
+
             {/* Nombre del Producto */}
             <div className="mb-6">
               <label className="block text-sm font-semibold text-gray-400 mb-2">
                 Nombre del producto
               </label>
               <input 
-                className="form-input-create-product" 
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                 type="text" 
                 name="productName"
+                value={productData.productName}
                 onChange={handleChange}
                 placeholder="Ej: Camisa Casual Azul"
               />
@@ -202,8 +212,10 @@ const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => 
               <div className="flex items-end gap-3">
                 <div className="flex-1">
                   <select 
-                    className="form-input-select-create-product"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
                     name="productCategory"
+                    value={productData.productCategory}
+                    onChange={handleChange}
                   >
                     <option value="">Seleccionar categoría</option>
                     {categories?.map((c, index) => (
@@ -213,8 +225,7 @@ const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => 
                 </div>
                 <button 
                   type="button"
-                  className="flex items-center gap-2 px-4 py-3 secondary-element text-gray-200 rounded-lg font-medium transition-all border border-gray-700 hover:border-purple-700 whitespace-nowrap"
-                 
+                  className="flex items-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-750 text-gray-200 rounded-lg font-medium transition-all border border-gray-700 hover:border-indigo-500 whitespace-nowrap"
                 >
                   <Plus size={18} />
                   Nueva Categoría
@@ -233,9 +244,10 @@ const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => 
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">$</span>
                   <input 
-                    className="form-input-number-create-product" 
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-8 pr-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                     type="number" 
                     name="productPrice"
+                    value={productData.productPrice}
                     onChange={handleChange}
                     placeholder="0.00"
                     step="0.01"
@@ -251,9 +263,10 @@ const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => 
                 </label>
                 <div className="relative">
                   <input 
-                    className="form-input-number-create-product px-4 pr-10" 
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 pr-10 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                     type="number" 
                     name="productDiscount"
+                    value={productData.productDiscount}
                     onChange={handleChange}
                     placeholder="0"
                     min="0"
@@ -269,9 +282,10 @@ const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => 
                   Stock
                 </label>
                 <input 
-                  className="form-input-number-create-product px-4" 
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                   type="number" 
                   name="productQuantity"
+                  value={productData.productQuantity}
                   onChange={handleChange}
                   placeholder="0"
                   min="0"
@@ -285,9 +299,10 @@ const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => 
                 </label>
                 <div className="relative">
                   <input 
-                    className="form-input-number-create-product px-4 pr-10" 
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 pr-10 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                     type="number" 
                     name="productTaxe"
+                    value={productData.productTaxe}
                     onChange={handleChange}
                     placeholder="0"
                     min="0"
@@ -297,10 +312,11 @@ const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => 
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">%</span>
                 </div>
               </div>
-                 {/* Resumen de Precio */}
             </div>
-            <div className=" mb-6 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg ">
-              <div className="grid grid-cols-2 gap-4 text-sm ">
+
+            {/* Resumen de Precio */}
+            <div className="mb-6 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-400">Precio base:</span>
                   <span className="text-white font-semibold ml-2">${productData.productPrice.toFixed(2)}</span>
@@ -327,27 +343,32 @@ const CreateProduct = ({setHideCreateProduct, storeId }: CreateProductProps) => 
             </div>
 
             {/* Botones */}
-            <div className="flex gap-3 pt-4 border-t border-gray-700">
-              <button className="important-element px-8 py-3 rounded-lg font-semibold" type="submit">Registrar Producto</button>
+            <div className="flex gap-3 pt-4 justify-end">
               <button 
-                onClick={() => setHideCreateProduct(false)}
+                className="important-element px-8 py-3 rounded-lg font-semibold" 
+                type="button"
+                onClick={updateProduct}
+              >
+                Guardar Cambios
+              </button>
+              <button 
                 className="cursor-pointer px-8 py-3 bg-gray-800 hover:bg-red-500/30 hover:text-white text-gray-400 rounded-lg font-semibold transition-all border border-gray-700"
               >
                 Cancelar
               </button>
             </div>
           </div>
-        </form>
+        </div>
 
         {/* Información Adicional */}
         <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
           <p className="text-sm text-blue-400">
-            <span className="font-semibold">💡 Consejo:</span> Asegúrate de completar todos los campos para una mejor gestión de tu inventario.
+            <span className="font-semibold">💡 Consejo:</span> Mantén actualizada la información de tus productos para ofrecer datos precisos a tus clientes.
           </p>
         </div>
       </div>
     </div>
-    )
+  );
 }
 
-export default CreateProduct
+export default EditProductForm;

@@ -1,7 +1,6 @@
 import { useContext, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import CreateStore from "./createStore"
-import { listStoresRequest } from "../../api/storeRequests"
 import ContextBody from "../../context"
 //import EditStoreForm from "./editStore"
 

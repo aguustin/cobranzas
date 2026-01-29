@@ -2,12 +2,13 @@ import { Package } from "lucide-react"
 import { useEffect, useState } from "react"
 import CreateProduct from "../admin/createProduct"
 import { listProductsRequest } from "../../api/productRequests"
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 
 const Products = () => {
    type ProductBody = {
     _id:string,
     productId:string,
+    productImg: string
     productName:string,
     productPrice:number,
     productQuantity:number,
@@ -27,13 +28,7 @@ const Products = () => {
             }
             getProductsFilterFunc()
         }, [filter])
-        console.log(products)
-        /**   productId:{type: String},  //es el ID escrito a mano por los usuarios. productMongoId utilizado en los controladores es el _id
-    productName:{type: String},
-    productPrice:{type: Number},
-    productCategory:{type: String},
-    productQuantity
-    totalSells */
+   console.log(products)
             return(
                 <>
                 {!hideCreateProduct && 
@@ -76,7 +71,7 @@ const Products = () => {
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
                                       <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg flex items-center justify-center">
-                                        <Package size={20} className="text-gray-400" />
+                                        {pr.productImg ? <img src={pr.productImg} alt="Product" className="w-full h-full object-cover rounded-lg" /> : <Package size={20} className="text-gray-400" />}
                                       </div>
                                       <span className="font-medium text-gray-100">{pr.productName}</span>
                                     </div>
@@ -88,7 +83,7 @@ const Products = () => {
                                     </span>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${''
+                                    <span className={` py-1 rounded-full text-sm font-medium ${''
                                       /*producto.stock < 20
                                         ? 'bg-red-500/10 text-red-400'
                                         : 'bg-blue-500/10 text-blue-400'*/
@@ -98,12 +93,12 @@ const Products = () => {
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex gap-2">
-                                      <button className="cursor-pointer px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
+                                      <Link to={`/edit_product/${storeId}/${pr._id}`} className="cursor-pointer px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
                                         Editar
-                                      </button>
-                                      <button className="cursor-pointer px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-750 text-gray-300 rounded-lg transition-colors border border-gray-700">
+                                      </Link>
+                                      <Link to={`/statistics_product/${storeId}/${pr._id}`} className="cursor-pointer px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-750 text-gray-300 rounded-lg transition-colors border border-gray-700">
                                         Ver
-                                      </button>
+                                      </Link>
                                     </div>
                                   </td>
                                 </tr>))}

@@ -9,4 +9,20 @@ cloudinary.config({
   api_secret: cloud_secret_key,
 });
 
+export const uploadFileToCloudinary = (file: Express.Multer.File): Promise<string> => {
+        console.log('se ejecuta')
+        return new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+                {  resource_type: 'image', folder: 'cobranza_products' },
+                (error, result) => {
+                    if (error) {
+                        console.error('Cloudinary upload error:', error);
+                        return reject(error);
+                    }
+                    resolve(result!.secure_url);
+                }
+            ).end(file.buffer);
+        });
+    }
+
 export default cloudinary;
