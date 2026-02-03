@@ -1,7 +1,7 @@
 import { ChevronLeft, Plus, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getStoreRequest, updateStoreRequest } from "../../api/storeRequests";
+import { getStoreByIdRequest, updateStoreRequest } from "../../api/storeRequests";
 
 interface FormDataBody  {
     storeName: string,
@@ -40,7 +40,7 @@ const EditStoreForm = () => {
 
   useEffect(() => {
     const getStoreFunc = async () => {
-      const res = await getStoreRequest({storeId})
+      const res = await getStoreByIdRequest({storeId})
       console.log(res.data.storeImg)
       setImagePreview(res.data.storeImg)
       setTaxes(res.data.storeTaxes)

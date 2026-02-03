@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Store, Clock, DollarSign, ShoppingBag, TrendingUp, AlertCircle, Check, X } from 'lucide-react';
 import { getDayDataRequest } from '../../api/storeRequests';
 import { Link, useParams } from 'react-router-dom';
+import ContextBody from '../../context';
 
   type StoreType = {
         _id: string,
@@ -25,6 +26,7 @@ import { Link, useParams } from 'react-router-dom';
   }
 
 export const StoreResume = () => {
+  const {getStoreByIdContext} = useContext(ContextBody)
   const { storeId } = useParams<{ storeId: string}>();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [storeData, setStoreData] = useState<StoreType | null>(null);
@@ -47,9 +49,8 @@ export const StoreResume = () => {
           setBoxData(res.data.box)
       }
       getStoreFunc()
+      getStoreByIdContext({storeId})
   }, [])
-
-  console.log(storeData)
   
 
   const formatCurrency = (amount: number) => {

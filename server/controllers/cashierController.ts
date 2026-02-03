@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import storeModel from "../models/storeModel.ts";
 import * as bcrypt from "bcrypt-ts";
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken'
 import { dev_url_front, email_adm, jwt_secret_key, nodemailer_pass } from "../config.ts";
 import nodemailer from "nodemailer";
-import cloudinary from "../lib/cloudinary.ts";
+import cloudinary, { uploadFileToCloudinaryAtmFolder } from "../lib/cloudinary.ts";
 import UserModel from "../models/userModel.ts";
 
 interface JwtUserPayload extends jwt.JwtPayload {
@@ -14,8 +14,8 @@ interface JwtUserPayload extends jwt.JwtPayload {
 type UserBody = {
   storeId: string,
   fullName: string,
-  userName: string,
-  userPassword: string,
+  username: string,
+  userpassword: string,
   userDni: number,
   userPhoto?: string,
   userRole: string,
@@ -30,24 +30,25 @@ export const getAllCashiersController = async (req: Request, res: Response) => {
 export const registerCashierController = async (
   req: Request<{}, {}, UserBody>,
   res: Response
-): Promise<number> => {
+): Promise<Response> => {
 
   const {
     storeId,
     fullName,
-    userName,
-    userPassword,
+    username,
+    userpassword,
     userDni
   } = req.body
 
   let imageUrl: string | undefined
-
+  console.log( storeId,
+    fullName,
+    username,
+    userpassword,
+    userDni)
   // 📸 Imagen (se mantiene igual)
   if (req.file) {
-    const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'cobranza_usersAtm'
-    })
-    imageUrl = uploadResponse.secure_url
+    imageUrl = await uploadFileToCloudinaryAtmFolder(req.file)
   }
 
   // 🔎 Validar usuario duplicado en la misma tienda
@@ -59,19 +60,19 @@ export const registerCashierController = async (
   })
 
   if (userExists) {
-    return 2 // usuario ya existe
+    return res.status(201).json('El usuario ya existe')
   }
 
   // 🔐 Hash password
   const salt = 12
-  const hashedPassword = await bcrypt.hash(userPassword, salt)
+  const hashedPassword = await bcrypt.hash(userpassword, salt)
 
   // 👤 Crear usuario
   await UserModel.create({
     storeId,
     fullName,
-    userName,
-    userPassword: hashedPassword,
+    username,
+    userpassword: hashedPassword,
     userDni,
     UserDate: new Date(),
     userPhoto: imageUrl,
@@ -79,15 +80,16 @@ export const registerCashierController = async (
     isActive: true
   })
 
-  return 1 // ok
+  return res.status(200).json('El usuario se creó con exito') 
 }
 
 export const loginCashierController = async (req: Request, res: Response) => {
   try {
-    const { userName, userPassword } = req.body
-
+    const {storeId, username, userpassword } = req.body
+  
+  
     // 🔎 Buscar usuario
-    const user = await UserModel.findOne({ userName })
+    const user = await UserModel.findOne({ storeId, username })
 
     if (!user) {
       return res.status(404).json({ code: 2 }) // usuario no existe
@@ -97,12 +99,12 @@ export const loginCashierController = async (req: Request, res: Response) => {
       return res.status(403).json({ code: 3 }) // usuario desactivado
     }
 
+ 
     // 🔐 Comparar password
     const passwordMatch = await bcrypt.compare(
-      userPassword,
-      user.userPassword
+      userpassword,
+      user.userpassword
     )
-
     if (!passwordMatch) {
       return res.status(401).json({ code: 1 })
     }
@@ -113,18 +115,18 @@ export const loginCashierController = async (req: Request, res: Response) => {
     // 🔑 JWT
     const secretKey: jwt.Secret = process.env.JWT_SECRET_KEY!
     const token = jwt.sign(
-      {
-        userId: user._id,
-        storeId: user.storeId,
-        role: user.userRole
-      },
-      secretKey,
-      {
-        expiresIn: '24h',
-        algorithm: 'HS256'
-      }
-    )
-
+  {
+    userId: user._id,
+    storeId: user.storeId,
+    role: user.userRole
+  },
+  secretKey,
+  {
+    expiresIn: '24h',
+    algorithm: 'HS256'
+  }
+)
+  console.log('qweqwewqeqweqweqwewqeqw')
     return res.status(200).json({token, user})
 
   } catch (error) {
@@ -152,7 +154,7 @@ export const confirmRecoveryPassController = async (req: Request<{userDni: numbe
         {userDni: userDni},
         {
             $set:{
-                userPassword: encryptNewPass
+                userpassword: encryptNewPass
             }
         }
     )
@@ -165,7 +167,7 @@ export const changePassController = async (req: Request<{}, {}, {userDni: number
 
     const user = await UserModel.findOne({userDni: userDni})
 
-    const checkOldPass = await bcrypt.compare(oldPass, user?.userPassword!)
+    const checkOldPass = await bcrypt.compare(oldPass, user?.userpassword!)
 
     if(checkOldPass){
 
@@ -175,7 +177,7 @@ export const changePassController = async (req: Request<{}, {}, {userDni: number
             {userDni: userDni},
             {
                 $set:{
-                    userPassword: encriptNewPass
+                    userpassword: encriptNewPass
                 }
             }
         )

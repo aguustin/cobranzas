@@ -1,6 +1,8 @@
 import {createContext, useEffect, useState } from "react"
 import type { PropsWithChildren } from "react";
-import { listStoresRequest } from "./api/storeRequests";
+import { getStoreByIdRequest, listStoresRequest } from "./api/storeRequests";
+import { loginCashierRequest } from "./api/cashierRequests";
+import { useNavigate } from "react-router-dom";
 
 const ContextBody = createContext({})
 
@@ -12,9 +14,11 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
         storeName: string,
         domicile: string
     }
-
+    const navigate = useNavigate()
     const [session, setSession] = useState({})
+    const [cashierSession, setCashierSession] = useState({})
     const [stores, setStores] = useState<storeType[]>([])
+    const [currentStore, setCurrentStore] = useState([])
 
     useEffect(() => {
         const getSession = async () => {
@@ -22,7 +26,6 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
         }
         getSession()
     }, [])
-
     
     const listStoresFunc = async (sessionId) => {
         const res = await listStoresRequest(sessionId)
@@ -30,8 +33,25 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
         console.log(res.data)
     }
 
+    const getStoreByIdContext = async ({storeId}: string) => {
+       const res = await getStoreByIdRequest({storeId})
+       setCurrentStore(res.data)
+    }
+
+    const loginCashierContext = async (userData) => {
+        const res = await loginCashierRequest(userData)
+        console.log(res.data)
+        if(res.data.token.length > 0){
+            sessionStorage.setItem('cashier', JSON.stringify(res.data));
+            const cachierData = JSON.parse(sessionStorage.getItem('cashier'))
+            setCashierSession(cachierData)
+            console.log(res.data)
+            navigate(`/store_resume/${res.data.user.storeId}`)
+        }
+    }
+
     return(
-        <ContextBody.Provider value={{session, setSession, stores, listStoresFunc}}>
+        <ContextBody.Provider value={{session, setSession, cashierSession, stores, listStoresFunc, getStoreByIdContext, currentStore, loginCashierContext}}>
             {children}
         </ContextBody.Provider>
     )

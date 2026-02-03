@@ -1,17 +1,21 @@
-import  { useState } from 'react';
+import  { useContext, useState } from 'react';
 import { User, Lock, LogIn, UserPlus, Upload, Trash2, Clock, CheckCircle, XCircle, CreditCard } from 'lucide-react';
-import { useParams } from 'react-router-dom';
-import { registerCashierRequest } from '../../api/cashierRequests';
+import { useNavigate, useParams } from 'react-router-dom';
+import { loginCashierRequest, registerCashierRequest } from '../../api/cashierRequests';
+import ContextBody from '../../context';
+//import { useNotification } from '../../globalComp';
 
 // ==================== COMPONENTE 1: Login de Cajero ====================
-export function LoginCajero() {
 
+export function LoginCajero() {
   const { storeId } = useParams<{ storeId: string}>();  
+  const [message, setMessage] = useState(0)
+  const {loginCashierContext} = useContext(ContextBody)
 
   const [userData, setUserData] = useState({
     storeId: storeId,
     username: '',
-    userPassword: ''
+    userpassword: ''
   });
 
   const handleChange = (e) => {
@@ -19,10 +23,11 @@ export function LoginCajero() {
     setUserData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log('Login:', userData);
-    alert('Iniciando sesión...');
+    loginCashierContext(userData)
+
+   
   };
 
   return (
@@ -67,8 +72,8 @@ export function LoginCajero() {
               <input 
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                 type="password" 
-                name="userPassword"
-                value={userData.userPassword}
+                name="userpassword"
+                value={userData.userpassword}
                 onChange={handleChange}
                 placeholder="Ingresa tu contraseña"
               />
@@ -97,10 +102,11 @@ const CashierLS = () => {
   const [userData, setUserData] = useState({
     storeId: storeId,
     fullName: '',
-    userName: '',
-    userPassword: '',
+    username: '',
+    userpassword: '',
     userDni: ''
   });
+  const [message, setMessage] = useState(0)
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -136,7 +142,7 @@ const CashierLS = () => {
         formData.append('userPhoto', photoFile);
     }
     const res = await registerCashierRequest(formData);
-    console.log(res.data)
+    setMessage(res.data)
   };
 
   return (
@@ -245,7 +251,7 @@ const CashierLS = () => {
                   <input 
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                     type="text" 
-                    name="dni"
+                    name="userDni"
                     value={userData.userDni}
                     onChange={handleChange}
                     placeholder="12345678"
@@ -265,7 +271,7 @@ const CashierLS = () => {
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                     type="text" 
                     name="username"
-                    value={userData.userName}
+                    value={userData.username}
                     onChange={handleChange}
                     placeholder="Nombre de usuario"
                   />
@@ -283,8 +289,8 @@ const CashierLS = () => {
                 <input 
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                   type="password" 
-                  name="password"
-                  value={userData.userPassword}
+                  name="userpassword"
+                  value={userData.userpassword}
                   onChange={handleChange}
                   placeholder="Contraseña segura"
                 />
@@ -322,7 +328,8 @@ const CashierLS = () => {
 // ==================== COMPONENTE PRINCIPAL (para demostración) ====================
 const CashierSystem = () => {
   const [vista, setVista] = useState('login');
-
+ // const {notifications, showNotification, removeNotification} = useNotification()
+const [message, setMessage] = useState(0)
   return (
     <div>
       {/* Menú de navegación para demo */}
@@ -352,6 +359,10 @@ const CashierSystem = () => {
       {/* Renderizar vista correspondiente */}
       {vista === 'login' && <LoginCajero />}
       {vista === 'registrar' && <CashierLS />}
+      {message > 0  && showNotification({ type: 'success',
+                message: '✓ Usuario registrado exitosamente',
+                position: 'top-right'})
+                 }
     </div>
   );
 }

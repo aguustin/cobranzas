@@ -173,7 +173,7 @@ export const listStoresController = async (req: Request<{sessionId: string}>, re
     return res.send(stores)
 }
 
-export const getStoreController = async (req: Request<{}, {}, {storeId: string}>, res: Response): Promise<Response> => {
+export const getStoreByIdController = async (req: Request<{}, {}, {storeId: string}>, res: Response): Promise<Response> => {
     const {storeId} = req.body
     console.log(storeId)
     const store = await storeModel.findOne({_id: storeId})

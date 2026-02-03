@@ -12,7 +12,7 @@ export const createStoreRequest = (formData: FormData) => axios.post('http://loc
 
 export const listStoresRequest = (sessionId: string) => axios.get(`http://localhost:4000/get_all_stores/${sessionId}`)
 
-export const getStoreRequest = ({storeId}: string) => axios.post('http://localhost:4000/get_store', {storeId})
+export const getStoreByIdRequest = ({storeId}: string) => axios.post('http://localhost:4000/get_store_by_id', {storeId})
 
 export const updateStoreRequest = (formData: FormData) => axios.post('http://localhost:4000/update_store', formData)
 

@@ -25,4 +25,22 @@ export const uploadFileToCloudinary = (file: Express.Multer.File): Promise<strin
         });
     }
 
+
+    export const uploadFileToCloudinaryAtmFolder = (file: Express.Multer.File): Promise<string> => {
+        console.log('se ejecuta')
+        return new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+                {  resource_type: 'image', folder: 'cobranza_usersAtm' },
+                (error, result) => {
+                    if (error) {
+                        console.error('Cloudinary upload error:', error);
+                        return reject(error);
+                    }
+                    resolve(result!.secure_url);
+                }
+            ).end(file.buffer);
+        });
+    }
+
+
 export default cloudinary;
