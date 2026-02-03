@@ -14,7 +14,7 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
     }
 
     const [session, setSession] = useState({})
-     const [stores, setStores] = useState<storeType[]>([])
+    const [stores, setStores] = useState<storeType[]>([])
 
     useEffect(() => {
         const getSession = async () => {

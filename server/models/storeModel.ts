@@ -11,17 +11,6 @@ const StoreSchema = new mongoose.Schema({
     storeEmail:{type: String},
     moneyType:{type: String},
     active:{type: Boolean, default: true},
-    users:[{
-        name:{type: String},
-        lastname:{type: String},
-        email:{type: String},
-        password:{type: String},
-        rol:{type: Number}, //1. admin, 2. cajero, 3. supervisor
-        active:{type: Boolean},
-        atmSells:{type:Number},
-        userAtmImg:{type: String},
-        isWorking:{type: Boolean}
-    }],
     startHour:{type: Date},
     endHour:{type: Date},
     storeTaxes: [{

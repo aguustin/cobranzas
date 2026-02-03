@@ -16,6 +16,8 @@ import StoreResume from './components/tienda/storeResume'
 import StoreStatistics from './components/tienda/storeStatistics'
 import EditProductForm from './components/products/editProduct'
 import ProductStatistics from './components/products/productStatistics'
+import CashierSystem from './components/users/cashierLS'
+import BoxesList from './components/users/boxesList'
 
 function AppRoutes() {
   const location = useLocation();
@@ -42,6 +44,8 @@ function AppRoutes() {
                 <Route path='/store_resume/:storeId' element={<StoreResume/>} />
                 <Route path='/edit_store/:storeId' element={<EditStoreForm/>}></Route>
                 <Route path='/store_statistics/:storeId/:storeName' element={<StoreStatistics/>}></Route>
+                <Route path='/cashiers_form/:storeId' element={<CashierSystem/>}/>
+                <Route path='/boxes_list/:storeId' element={<BoxesList/>}/>
                 <Route path='/a' element={<Sells/>}/>
                 <Route path='/a' element={<Stocki/>}/>
               </Routes>

@@ -103,6 +103,7 @@ export interface GiftCardI{
 export interface BoxI{
     storeId: string;
     boxName:string;
+    boxNumber:number;
     isOpen:boolean;
     boxDate: Date;
     totalMoneyInBox: number;

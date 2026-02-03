@@ -14,4 +14,5 @@ router.post('/update_product', upload.single('productImg'), updateProductControl
 
 router.get('/get_product_by_id/:storeId/:productMongoId', getProductByIdController)
 
+
 export default router
