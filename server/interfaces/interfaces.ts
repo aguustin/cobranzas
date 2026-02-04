@@ -104,8 +104,16 @@ export interface BoxI{
     storeId: string;
     boxName:string;
     boxNumber:number;
+    location:string;
+    paymentTerminal:string;
     isOpen:boolean;
     boxDate: Date;
     totalMoneyInBox: number;
+    maxDiscount:number,
+    printer:string,
+    allowRefunds: boolean,
+    allowCashWithdrawal: boolean,
+    requireManagerAuth: boolean,
+    maxTransactionAmount: number,
     boxDifferenceMoney:number;
 }

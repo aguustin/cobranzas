@@ -26,7 +26,7 @@ import ContextBody from '../../context';
   }
 
 export const StoreResume = () => {
-  const {getStoreByIdContext} = useContext(ContextBody)
+  const {cashierSession, getStoreByIdContext} = useContext(ContextBody)
   const { storeId } = useParams<{ storeId: string}>();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [storeData, setStoreData] = useState<StoreType | null>(null);
@@ -154,19 +154,25 @@ export const StoreResume = () => {
               
 
               {/* Turno Activo */}
-              <div className="p-3 rounded-lg border-2 bg-blue-500/10 border-blue-500/30">
+              {cashierSession.user ? <div className="p-3 rounded-lg border-2 bg-blue-500/10 border-blue-500/30">
                 <span className="text-sm text-gray-400 block">Turno Activo</span>
-                <p className="font-bold text-blue-400 mt-1">Mañana{/*tiendaData.turno*/}</p>
+               <p className="font-bold text-blue-400 mt-1">Mañana{/*tiendaData.turno*/} - {cashierSession.user.fullName}</p>
               </div>
+              :
+              <div className="p-3 rounded-lg border-2 bg-gradient-to-r from-gray-800 to-gray-900 border-gray-500/30">
+                <span className="text-sm text-gray-300 block">Turno Inactivo</span>
+                 <p className="font-bold text-gray-200 mt-1">-</p>
+              </div>
+              }
 
               {/* Acciones Rápidas */}
-              <div className="flex gap-2">
-                <button className="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all">
+              <div className="flex items-center text-center gap-2">
+                <Link to={`/boxes_list/${storeId}`} className="flex-1 px-3 py-7 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-all">
                   Abrir Caja
-                </button>
-                <button className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-semibold transition-all border border-gray-700">
+                </Link>
+                {cashierSession.user && <button className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-semibold transition-all border border-gray-700">
                   Cerrar Turno
-                </button>
+                </button>}
               </div>
             </div>
           </div>

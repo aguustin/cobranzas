@@ -8,7 +8,7 @@ const ContextBody = createContext({})
 
 export const ContextBodyProvider = ({children}: PropsWithChildren) => {
 
-     type storeType = {
+    type storeType = {
         _id: string,
         storeImg: string,
         storeName: string,
