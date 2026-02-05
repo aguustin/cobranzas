@@ -90,7 +90,7 @@ export interface SellI{
     ticketNumber:string;
     ticketEmisionDate:Date;
     storeName:string;
-    userAtm:string;
+    cashierId:string;
 }
 
 /*-------------------------------------------------------- interfaces para el modelo de GIFTCARD ------------------------------------------------------------*/
@@ -102,18 +102,20 @@ export interface GiftCardI{
 
 export interface BoxI{
     storeId: string;
+    cashierId: string;
     boxName:string;
-    boxNumber:number;
+    boxNumber:string;
     location:string;
     paymentTerminal:string;
     isOpen:boolean;
     boxDate: Date;
+    initialCash: number;
     totalMoneyInBox: number;
-    maxDiscount:number,
-    printer:string,
-    allowRefunds: boolean,
-    allowCashWithdrawal: boolean,
-    requireManagerAuth: boolean,
-    maxTransactionAmount: number,
+    maxDiscount:number;
+    printer:string;
+    allowRefunds: boolean;
+    allowCashWithdrawal: boolean;
+    requireManagerAuth: boolean;
+    maxTransactionAmount: number;
     boxDifferenceMoney:number;
 }

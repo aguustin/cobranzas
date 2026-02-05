@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, DollarSign, Hash, Package, CreditCard, Printer, AlertCircle } from 'lucide-react';
 import { useParams } from 'react-router-dom';
+import { createBoxRequest } from '../../api/boxRequests';
 
 const CreateBox = () => {
 
@@ -29,8 +30,9 @@ const CreateBox = () => {
     }));
   };
 
-  const createBox = () => {
-    console.log('Caja creada:', formData);
+  const createBox = async () => {
+    const res = await createBoxRequest({formData})
+    console.log(res.data)
     alert('Caja registrada exitosamente');
   };
 
@@ -124,8 +126,8 @@ const CreateBox = () => {
                     <input 
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-8 pr-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all" 
                       type="number" 
-                      name="initialCash"
-                      value={formData.initialCash}
+                      name="totalMoneyInBox"
+                      value={formData.totalMoneyInBox}
                       onChange={handleChange}
                       placeholder="0.00"
                       step="0.01"
@@ -293,7 +295,7 @@ const CreateBox = () => {
                       <span className="text-gray-400">Caja:</span> {formData.boxName || 'Sin nombre'} ({formData.boxNumber || 'Sin número'})
                     </div>
                     <div className="text-gray-300">
-                      <span className="text-gray-400">Efectivo inicial:</span> ${formData.initialCash.toFixed(2)}
+                      <span className="text-gray-400">Efectivo inicial:</span> ${formData.totalMoneyInBox.toFixed(2)}
                     </div>
                     <div className="text-gray-300">
                       <span className="text-gray-400">Descuento máx:</span> {formData.maxDiscount}%

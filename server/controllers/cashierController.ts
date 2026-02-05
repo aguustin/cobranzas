@@ -6,6 +6,7 @@ import { dev_url_front, email_adm, jwt_secret_key, nodemailer_pass } from "../co
 import nodemailer from "nodemailer";
 import cloudinary, { uploadFileToCloudinaryAtmFolder } from "../lib/cloudinary.ts";
 import UserModel from "../models/userModel.ts";
+import sellModel from "../models/sellModel.ts";
 
 interface JwtUserPayload extends jwt.JwtPayload {
   email: string;
@@ -126,7 +127,7 @@ export const loginCashierController = async (req: Request, res: Response) => {
     algorithm: 'HS256'
   }
 )
-  console.log('qweqwewqeqweqweqwewqeqw')
+  
     return res.status(200).json({token, user})
 
   } catch (error) {
@@ -229,7 +230,7 @@ export const updateCashierController = async (req: Request<{}, {}, UserBody & {s
             folder: 'cobranza_usersAtm',
         });
         imageUrl = uploadResponse.secure_url;
-        dataToUpdate.userAtmImg = imageUrl
+        dataToUpdate.cashierIdImg = imageUrl
     }
 
     const updateUser = await UserModel.updateOne(
@@ -246,6 +247,105 @@ export const updateCashierController = async (req: Request<{}, {}, UserBody & {s
     return res.status(200).json({message: 1})
 }
 
+
+
+//Ventas totales por cajero
+export const totalSellsByCashierController = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { storeId } = req.query as { storeId: string };
+    if (!storeId) return res.status(400).json({ message: "storeId requerido" });
+
+    const salesByCashier = await sellModel.aggregate([
+      { $match: { storeId } },
+      {
+        $group: {
+          _id: "$cashierId",
+          totalSales: { $sum: "$sellTotal" },
+          totalQuantity: { $sum: "$sellQuantity" },
+          totalTaxes: { $sum: "$sellTaxes" },
+          totalDiscounts: { $sum: "$discount" },
+          salesCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    return res.status(200).json(salesByCashier);
+  } catch (error) {
+    return res.status(500).json({ message: "Error obteniendo ventas por cajero" });
+  }
+};
+
+
+
+//Ventas totales por caja
+export const salesByBoxController = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { storeId } = req.query as { storeId: string };
+    if (!storeId) return res.status(400).json({ message: "storeId requerido" });
+
+    const salesByBox = await sellModel.aggregate([
+      { $match: { storeId } },
+      {
+        $group: {
+          _id: "$boxId",
+          totalSales: { $sum: "$sellTotal" },
+          totalQuantity: { $sum: "$sellQuantity" },
+          totalTaxes: { $sum: "$sellTaxes" },
+          salesCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    return res.status(200).json(salesByBox);
+  } catch (error) {
+    return res.status(500).json({ message: "Error obteniendo ventas por caja" });
+  }
+};
+
+
+/**Si quieres, el próximo paso ideal sería:
+
+📊 Reporte diario por caja + cajero (cuadre de caja)
+
+⚡ Índices recomendados para que estos reports vuelen
+
+🧾 Exportar a PDF / Excel
+
+Tú dime por dónde seguimos.
+
+seguir con esto 05/02/2026
+*/
+
+
+
+//Ventas totales por mes
+export const totalSellsByMonthController = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { storeId } = req.query as { storeId: string };
+    if (!storeId) return res.status(400).json({ message: "storeId requerido" });
+
+    const salesByMonth = await sellModel.aggregate([
+      { $match: { storeId } },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$sellDate" },
+            month: { $month: "$sellDate" }
+          },
+          totalSales: { $sum: "$sellTotal" },
+          totalQuantity: { $sum: "$sellQuantity" },
+          totalTaxes: { $sum: "$sellTaxes" },
+          salesCount: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    return res.status(200).json(salesByMonth);
+  } catch (error) {
+    return res.status(500).json({ message: "Error obteniendo ventas por mes" });
+  }
+};
 
 /*export const changePreferencesController = async (req: Request, res:Response): Promise<Response> => {
     const {email, language, moneyType} = req.body

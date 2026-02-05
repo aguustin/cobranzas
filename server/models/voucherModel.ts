@@ -5,7 +5,7 @@ const VoucherSchema = new mongoose.Schema({
     storeId:{type: String},
     storeName:{type: String},
     voucherDate:{type: Date},
-    userAtm:{type: String},
+    cashierId:{type: String},
     products:[{
         productName:{type: String},
         quantity:{type: Number},

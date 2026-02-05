@@ -16,7 +16,7 @@ const SellSchema = new mongoose.Schema<SellI>({
     ticketNumber:{type: String},
     ticketEmisionDate:{type: Date},
     storeName:{type:String},
-    userAtm:{type: String}
+    cashierId:{type: String}
 })
 
 SellSchema.index({ storeId: 1, sellDate: 1 }); 

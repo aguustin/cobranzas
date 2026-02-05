@@ -17,9 +17,9 @@ import StoreStatistics from './components/tienda/storeStatistics'
 import EditProductForm from './components/products/editProduct'
 import ProductStatistics from './components/products/productStatistics'
 import CashierSystem from './components/users/cashierLS'
-import BoxesList from './components/boxes/boxesList'
+import BoxesList from './components/boxes/boxesSystem'
 import CreateBox from './components/boxes/createBox'
-import Boxes from './components/boxes/boxesList'
+import Boxes from './components/boxes/boxesSystem'
 
 function AppRoutes() {
   const location = useLocation();
