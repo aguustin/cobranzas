@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import boxesModel from "../models/boxModel.ts";
+import mongoose from "mongoose";
 
 type BoxBody = {
     storeId: string,
@@ -16,13 +17,49 @@ type BoxBody = {
     maxTransactionAmount: number
 }
 
-export const getBoxesListController = async (req: Request<{storeId: string}, {}, {}>, res:Response): Promise<Response> => {
-    const {storeId} = req.params;
-    
-    const boxes = await boxesModel.find({storeId: storeId})
+/*export const getBoxController = async (req: Request<{}, {}, {}>, res:Response): Promise<Response> => {
+    const {storeId, cashierId} = req.body;
 
-    return res.status(200).json(boxes)
-}
+    const box = await boxesModel.findOne({storeId: storeId, cashierId: cashierId ? new mongoose.Types.ObjectId(cashierId) : null, isOpen: true})
+        .populate('cashierId', 'fullName userPhoto')
+
+    return res.status(200).json(box)
+}*/
+
+export const getBoxesListController = async (req: Request<{}, {}, { storeId: string }>, res: Response) => {
+    const { storeId } = req.body;
+
+    const boxes = await boxesModel.aggregate([
+        { $match: { storeId: storeId } },  // Filtra por storeId
+        {
+            $lookup: {
+                from: "UserModel",         // Nombre real de la colección de usuarios en MongoDB
+                localField: "cashierId",   // Campo en Box
+                foreignField: "_id",       // Campo en UserModel
+                as: "cashier"              // Cómo quieres que se llame el array resultado
+            }
+        },
+        {
+            $unwind: { 
+                path: "$cashier", 
+                preserveNullAndEmptyArrays: true // Para cajas sin cajero
+            }
+        },
+        {
+            $project: {
+                boxName: 1,
+                boxNumber: 1,
+                isOpen: 1,
+                initialCash: 1,
+                totalMoneyInBox: 1,
+                cashier: 1
+            }
+        }
+    ]);
+
+    return res.status(200).json(boxes);
+};
+
 
 export const createBoxController = async (req: Request<{}, {}, {formData:BoxBody}>, res:Response): Promise<Response> => {
     const {formData} = req.body
@@ -31,27 +68,28 @@ export const createBoxController = async (req: Request<{}, {}, {formData:BoxBody
     return res.status(200).json(1)
 }
 
-export const openCloseBoxController = async (req: Request<{boxId: string, isOpen: boolean}, {}, {}>, res:Response): Promise<Response> => {
-    const {boxId, isOpen} = req.params
-    const boxData = await boxesModel.findOne({_id: boxId})
-    if(isOpen){
-        await boxesModel.updateOne({_id:boxId},
+export const openCloseBoxController = async (
+    req: Request<{ boxId: string, isOpen: boolean  }, {}, {}, {cashierId: string}>,
+    res: Response
+): Promise<Response> => {
+    const { boxId, isOpen, cashierId } = req.body
+    
+    const boxData = await boxesModel.findById(boxId)
+
+    if (!boxData) return res.status(404).json({ message: 'Caja no encontrada' })
+ 
+        await boxesModel.findByIdAndUpdate(
+        { _id: boxId },
         {
-            $set:{
-                isOpen: isOpen,
-                initialCash: boxData!.totalMoneyInBox
+            $set: {
+                isOpen,
+                cashierId: isOpen ? new mongoose.Types.ObjectId(cashierId) : null,
+                initialCash: isOpen ? boxData.totalMoneyInBox : boxData.initialCash
             }
         }
         )
-    }else{
-        await boxesModel.updateOne({_id:boxId},
-            {
-                $set:{
-                    isOpen: isOpen
-                }
-            }
-        )
-    }
 
-    return res.status(200).json({message: isOpen ? 'Se abrio la caja' : 'Se cerro la caja'})
+    return res.status(200).json({
+        message: isOpen ? 'Se abrió la caja' : 'Se cerró la caja'
+    })
 }

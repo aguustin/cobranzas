@@ -1,24 +1,37 @@
 import { User, LogIn, Clock, CheckCircle, XCircle, DollarSign } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getBoxesListRequest, openCloseBoxRequest } from '../../api/boxRequests';
+import ContextBody from '../../context';
 
 const BoxesList = () => {
   const {storeId} = useParams<{ storeId: string}>();
+  const {session} = useContext(ContextBody)
   const [boxesData, setBoxesData] = useState([])
-
   
+  const cashierId = session?._id
+
   useEffect(() => {
+    const data = {
+      storeId: storeId,
+      cashierId: cashierId
+    }
     const getBoxesList = async () => {
-      const res = await getBoxesListRequest({storeId})
+      const res = await getBoxesListRequest(data)
       setBoxesData(res.data)
     }
-   
     getBoxesList()
-  },[])
+  },[cashierId])
+ 
+  console.log(boxesData)
   
   const ingresarCaja = async (boxId, isOpen) => {
-    await openCloseBoxRequest({boxId, isOpen})
+    const data = {
+      boxId: boxId,
+      isOpen: isOpen,
+      cashierId: cashierId
+    }
+    await openCloseBoxRequest(data)
     window.location.reload()
   }
 

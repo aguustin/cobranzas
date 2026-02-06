@@ -102,7 +102,7 @@ export interface GiftCardI{
 
 export interface BoxI{
     storeId: string;
-    cashierId: string;
+    cashierId?: string | null 
     boxName:string;
     boxNumber:string;
     location:string;
