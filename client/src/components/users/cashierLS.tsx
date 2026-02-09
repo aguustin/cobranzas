@@ -1,4 +1,4 @@
-import  { useContext, useState } from 'react';
+import  { useContext, useEffect, useState } from 'react';
 import { User, Lock, LogIn, UserPlus, Upload, Trash2, Clock, CheckCircle, XCircle, CreditCard } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { loginCashierRequest, registerCashierRequest } from '../../api/cashierRequests';
@@ -94,6 +94,7 @@ export function LoginCajero() {
 
 // ==================== COMPONENTE 3: Registrar Cajero ====================
 const CashierLS = () => {
+  const navigate = useNavigate()
   const { storeId } = useParams<{ storeId: string}>();  
   const [imagePreview, setImagePreview] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
@@ -327,7 +328,9 @@ const CashierLS = () => {
 const CashierSystem = () => {
   const [vista, setVista] = useState('login');
  // const {notifications, showNotification, removeNotification} = useNotification()
-const [message, setMessage] = useState(0)
+  const [message, setMessage] = useState(0)
+
+
   return (
     <div>
       {/* Menú de navegación para demo */}

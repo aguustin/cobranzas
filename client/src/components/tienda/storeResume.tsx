@@ -52,7 +52,9 @@ export const StoreResume = () => {
       getStoreByIdContext({storeId})
   }, [])
   
-
+  console.log('storeData: ', storeData)
+  console.log('sellsData: ', sellsData)
+  console.log('boxData: ', boxData) 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
@@ -307,7 +309,7 @@ export const StoreResume = () => {
                     : 'text-red-400'
               }`}>
                 {boxData?.boxDifferenceMoney === 0 
-                  ? 'Sin boxDifferenceMoney' 
+                  ? '0' 
                   : formatCurrency(Math.abs(boxData?.boxDifferenceMoney  || 0))}
               </p>
               <div className={`flex items-center gap-2 text-sm ${

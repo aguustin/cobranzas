@@ -8,31 +8,24 @@ const BoxesList = () => {
   const {storeId} = useParams<{ storeId: string}>();
   const [boxesData, setBoxesData] = useState([])
   
-  let cashierId;
+  let cashierId = sessionStorage.getItem('cashierId');
 
   useEffect(() => {
    // espera hasta que haya sesión
-  const storedCashier = sessionStorage.getItem('cashier');
-  if (storedCashier) {
-     cashierId = JSON.parse(storedCashier);
-  }
-
   const data = {
     storeId: storeId,
-    cashierId: cashierId?.user?._id
   };
 
-  console.log('data sent to API', cashierId?.user?._id);
-
   const getBoxesList = async () => {
-    const res = await getBoxesListRequest(data);
+    const res = await getBoxesListRequest({storeId});
     setBoxesData(res.data);
   };
 
   getBoxesList();
-}, [storeId, cashierId]);
+}, [storeId]);
  
-  console.log(boxesData)
+  console.log('boxes: ',  boxesData)
+
   const ingresarCaja = async (boxId, isOpen) => {
     const data = {
       boxId: boxId,
@@ -78,25 +71,25 @@ const BoxesList = () => {
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <User size={16} className="text-gray-400" />
-          <span className="text-gray-300 text-sm">{caja.boxName} - {caja.cashier.fullName}</span>
+          <span className="text-gray-300 text-sm">{caja?.boxName} - {caja?.cashier?.fullName}</span>
         </div>
         <div className="flex items-center gap-2">
           <Clock size={16} className="text-gray-400" />
           <span className="text-gray-400 text-sm">
-            {formatDateTime(caja.cashier.loginDate)}
+            {formatDateTime(caja?.cashier?.loginDate)}
           </span>
         </div>
         <div className="items-center justify-between gap-2">
             <span className="flex items-center text-gray-400 text-sm mb-2">
             <DollarSign size={16} className="text-gray-400" />
-            <p className='font-medium'>Dinero Inicial: {caja.initialCash}</p>
+            <p className='font-medium'>Dinero Inicial: {caja?.initialCash}</p>
           </span>
           <span className="flex items-center text-gray-400 text-sm">
             <DollarSign size={16} className="text-green-600" />
-            <p className='text-green-600 font-medium'>Dinero En Caja: {caja.totalMoneyInBox}</p>
+            <p className='text-green-600 font-medium'>Dinero En Caja: {caja?.totalMoneyInBox}</p>
           </span>
         </div>
-          <button onClick={() => ingresarCaja(caja._id, false)}  className="flex items-center justify-center gap-2 px-5 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all shadow-lg cursor-pointer">
+          <button onClick={() => ingresarCaja(caja?._id, false)}  className="flex items-center justify-center gap-2 px-5 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all shadow-lg cursor-pointer">
                 Cerrar Caja
           </button>
       </div>
@@ -112,13 +105,13 @@ const BoxesList = () => {
             <XCircle className="text-gray-400" size={28} />
             <h2 className="text-2xl font-bold">Cajas Disponibles</h2>
             <span className="ml-2 px-3 py-1 bg-gray-500/20 text-gray-400 rounded-full text-sm font-semibold">
-              {boxesData.filter(caja => !caja.isOpen).length}
+              {boxesData.filter(caja => !caja?.isOpen).length}
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {boxesData
-  .filter(caja => !caja.isOpen)
+  .filter(caja => !caja?.isOpen)
   .map(caja => (
     <div 
       key={caja._id}
@@ -126,7 +119,7 @@ const BoxesList = () => {
     >
       <div className="flex items-center justify-between mb-4">
         <span className="text-2xl font-bold text-gray-300">
-          {caja.boxNumber}
+          {caja?.boxNumber}
         </span>
         <div className="px-3 py-1 bg-gray-700/50 rounded-full">
           <span className="text-gray-400 text-xs font-semibold">
@@ -140,7 +133,7 @@ const BoxesList = () => {
       </div>
 
       <button 
-        onClick={() => ingresarCaja(caja._id, true)}
+        onClick={() => ingresarCaja(caja?._id, true)}
         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20"
       >
         <LogIn size={18} />

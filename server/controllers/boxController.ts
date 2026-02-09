@@ -27,56 +27,64 @@ type BoxBody = {
 }*/
 
 export const getBoxesListController = async (req: Request<{}, {}, { storeId: string, cashierId: string }>, res: Response) => {
-    const { storeId, cashierId } = req.body;
+    const { storeId } = req.body;
+    
+const boxes = await boxesModel.aggregate([
+  { $match: { storeId } },
 
-   const boxes = await boxesModel.aggregate([
-        { $match: { storeId: storeId } }, // todas las cajas de la tienda
+  {
+    $addFields: {
+      cashierIdObj: {
+        $cond: [
+          { $ifNull: ['$cashierId', false] },
+          { $toObjectId: '$cashierId' },
+          null
+        ]
+      }
+    }
+  },
 
-        // Convertimos cashierId a ObjectId para poder hacer el lookup
-        {
-            $addFields: {
-            cashierIdObj: {
-                $cond: [
-                { $ifNull: [cashierId, false] }, // si cashierId existe
-                { $toObjectId: cashierId },
-                null
-                ]
-            }
-            }
-        },
+  {
+    $lookup: {
+      from: 'usermodels',
+      localField: 'cashierIdObj',
+      foreignField: '_id',
+      as: 'cashier'
+    }
+  },
 
-        // Lookup para traer el usuario correspondiente al cashierId
-        {
-            $lookup: {
-            from: "usermodels",            // colección de usuarios
-            localField: "cashierIdObj",    // campo de la caja
-            foreignField: "_id",           // campo en UserModel
-            as: "cashier"
-            }
-        },
+  {
+    $unwind: {
+      path: '$cashier',
+      preserveNullAndEmptyArrays: true
+    }
+  },
 
-        // Unwind para convertir array en objeto, pero dejamos cajas sin cajero
-        { $unwind: { path: "$cashier", preserveNullAndEmptyArrays: true } },
+  {
+    $project: {
+      boxName: 1,
+      boxNumber: 1,
+      isOpen: 1,
+      initialCash: 1,
+      totalMoneyInBox: 1,
+      cashierId: 1,
 
-        // Project: seleccionamos los campos de la caja y del cajero
-        {
-            $project: {
-            boxName: 1,
-            boxNumber: 1,
-            isOpen: 1,
-            initialCash: 1,
-            totalMoneyInBox: 1,
-            cashierId: 1,
-            cashier: {
-                fullName: { $ifNull: ["$cashier.fullName", ""] },
-                username: { $ifNull: ["$cashier.username", ""] },
-                userRole: { $ifNull: ["$cashier.userRole", ""] },
-                userPhoto: { $ifNull: ["$cashier.userPhoto", ""] },
-                loginDate: { $ifNull: [new Date(), ""] }
-            }
-            }
-        }
-    ]);
+      cashier: {
+        $cond: [
+          { $ifNull: ['$cashier._id', false] }, // 👉 solo si existe cajero
+          {
+            fullName: '$cashier.fullName',
+            username: '$cashier.username',
+            userRole: '$cashier.userRole',
+            userPhoto: '$cashier.userPhoto',
+            loginDate: new Date()
+          },
+          '$$REMOVE' // ❌ elimina el campo completamente
+        ]
+      }
+    }
+  }
+]);
 
     return res.status(200).json(boxes);
 };
@@ -104,7 +112,7 @@ export const openCloseBoxController = async (
         {
             $set: {
                 isOpen,
-                cashierId: isOpen ? new mongoose.Types.ObjectId(cashierId) : null,
+                cashierId: isOpen ? cashierId : null,
                 initialCash: isOpen ? boxData.totalMoneyInBox : boxData.initialCash
             }
         }
@@ -113,4 +121,9 @@ export const openCloseBoxController = async (
     return res.status(200).json({
         message: isOpen ? 'Se abrió la caja' : 'Se cerró la caja'
     })
+}
+
+export const deleteAllBoxesController = async (req: Request, res: Response): Promise<Response> => {
+    await boxesModel.deleteMany({})
+    return res.status(200).json({message: 'Todas las cajas han sido eliminadas'})
 }

@@ -563,10 +563,10 @@ export const getDayDataController = async (req:Request<{storeId: string}>, res:R
     })(),
       boxesModel.findOne({
         storeId: storeId,
-        boxDate: {
+        /*boxDate: {
           $gte: hoyInicio,
           $lte: hoyFin
-        }
+        }*/
       }).lean()
     ]);
 
