@@ -26,33 +26,54 @@ type BoxBody = {
     return res.status(200).json(box)
 }*/
 
-export const getBoxesListController = async (req: Request<{}, {}, { storeId: string }>, res: Response) => {
-    const { storeId } = req.body;
+export const getBoxesListController = async (req: Request<{}, {}, { storeId: string, cashierId: string }>, res: Response) => {
+    const { storeId, cashierId } = req.body;
 
-    const boxes = await boxesModel.aggregate([
-        { $match: { storeId: storeId } },  // Filtra por storeId
+   const boxes = await boxesModel.aggregate([
+        { $match: { storeId: storeId } }, // todas las cajas de la tienda
+
+        // Convertimos cashierId a ObjectId para poder hacer el lookup
+        {
+            $addFields: {
+            cashierIdObj: {
+                $cond: [
+                { $ifNull: [cashierId, false] }, // si cashierId existe
+                { $toObjectId: cashierId },
+                null
+                ]
+            }
+            }
+        },
+
+        // Lookup para traer el usuario correspondiente al cashierId
         {
             $lookup: {
-                from: "UserModel",         // Nombre real de la colección de usuarios en MongoDB
-                localField: "cashierId",   // Campo en Box
-                foreignField: "_id",       // Campo en UserModel
-                as: "cashier"              // Cómo quieres que se llame el array resultado
+            from: "usermodels",            // colección de usuarios
+            localField: "cashierIdObj",    // campo de la caja
+            foreignField: "_id",           // campo en UserModel
+            as: "cashier"
             }
         },
-        {
-            $unwind: { 
-                path: "$cashier", 
-                preserveNullAndEmptyArrays: true // Para cajas sin cajero
-            }
-        },
+
+        // Unwind para convertir array en objeto, pero dejamos cajas sin cajero
+        { $unwind: { path: "$cashier", preserveNullAndEmptyArrays: true } },
+
+        // Project: seleccionamos los campos de la caja y del cajero
         {
             $project: {
-                boxName: 1,
-                boxNumber: 1,
-                isOpen: 1,
-                initialCash: 1,
-                totalMoneyInBox: 1,
-                cashier: 1
+            boxName: 1,
+            boxNumber: 1,
+            isOpen: 1,
+            initialCash: 1,
+            totalMoneyInBox: 1,
+            cashierId: 1,
+            cashier: {
+                fullName: { $ifNull: ["$cashier.fullName", ""] },
+                username: { $ifNull: ["$cashier.username", ""] },
+                userRole: { $ifNull: ["$cashier.userRole", ""] },
+                userPhoto: { $ifNull: ["$cashier.userPhoto", ""] },
+                loginDate: { $ifNull: [new Date(), ""] }
+            }
             }
         }
     ]);

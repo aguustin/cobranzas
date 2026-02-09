@@ -173,3 +173,15 @@ export function useNotification() {
     removeNotification
   };
 }
+
+export const formatDateTime = (date: Date | string): string => {
+  const d = new Date(date);
+
+  const day = d.getDate();
+  const month = d.toLocaleString('en-US', { month: 'short' }); // Feb
+  const hours = d.getHours().toString().padStart(2, '0');
+  const minutes = d.getMinutes().toString().padStart(2, '0');
+  const seconds = d.getSeconds().toString().padStart(2, '0');
+
+  return `${day} ${month} ${hours}:${minutes}:${seconds}`;
+};

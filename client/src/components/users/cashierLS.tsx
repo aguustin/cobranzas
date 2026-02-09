@@ -26,8 +26,6 @@ export function LoginCajero() {
   const handleLogin = async (e) => {
     e.preventDefault();
     loginCashierContext(userData)
-
-   
   };
 
   return (

@@ -45,13 +45,12 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
             sessionStorage.setItem('cashier', JSON.stringify(res.data));
             const cachierData = JSON.parse(sessionStorage.getItem('cashier'))
             setCashierSession(cachierData)
-            console.log(res.data)
             navigate(`/store_resume/${res.data.user.storeId}`)
         }
     }
-
+    
     return(
-        <ContextBody.Provider value={{session, setSession, cashierSession, stores, listStoresFunc, getStoreByIdContext, currentStore, loginCashierContext}}>
+        <ContextBody.Provider value={{session, setSession, cashierSession, setCashierSession, stores, listStoresFunc, getStoreByIdContext, currentStore, loginCashierContext}}>
             {children}
         </ContextBody.Provider>
     )

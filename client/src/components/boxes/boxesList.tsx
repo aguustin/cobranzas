@@ -2,29 +2,37 @@ import { User, LogIn, Clock, CheckCircle, XCircle, DollarSign } from 'lucide-rea
 import { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getBoxesListRequest, openCloseBoxRequest } from '../../api/boxRequests';
-import ContextBody from '../../context';
+import { formatDateTime } from '../../globalComp';
 
 const BoxesList = () => {
   const {storeId} = useParams<{ storeId: string}>();
-  const {session} = useContext(ContextBody)
   const [boxesData, setBoxesData] = useState([])
   
-  const cashierId = session?._id
+  let cashierId;
 
   useEffect(() => {
-    const data = {
-      storeId: storeId,
-      cashierId: cashierId
-    }
-    const getBoxesList = async () => {
-      const res = await getBoxesListRequest(data)
-      setBoxesData(res.data)
-    }
-    getBoxesList()
-  },[cashierId])
+   // espera hasta que haya sesión
+  const storedCashier = sessionStorage.getItem('cashier');
+  if (storedCashier) {
+     cashierId = JSON.parse(storedCashier);
+  }
+
+  const data = {
+    storeId: storeId,
+    cashierId: cashierId?.user?._id
+  };
+
+  console.log('data sent to API', cashierId?.user?._id);
+
+  const getBoxesList = async () => {
+    const res = await getBoxesListRequest(data);
+    setBoxesData(res.data);
+  };
+
+  getBoxesList();
+}, [storeId, cashierId]);
  
   console.log(boxesData)
-  
   const ingresarCaja = async (boxId, isOpen) => {
     const data = {
       boxId: boxId,
@@ -70,12 +78,12 @@ const BoxesList = () => {
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <User size={16} className="text-gray-400" />
-          <span className="text-gray-300 text-sm">{caja.boxName}</span>
+          <span className="text-gray-300 text-sm">{caja.boxName} - {caja.cashier.fullName}</span>
         </div>
         <div className="flex items-center gap-2">
           <Clock size={16} className="text-gray-400" />
           <span className="text-gray-400 text-sm">
-            {caja.boxDate} - {caja.hora}
+            {formatDateTime(caja.cashier.loginDate)}
           </span>
         </div>
         <div className="items-center justify-between gap-2">
