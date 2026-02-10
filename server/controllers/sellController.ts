@@ -7,6 +7,8 @@ import voucherModel from "../models/voucherModel.ts";
 import boxesModel from "../models/boxModel.ts";
 import storeModel from "../models/storeModel.ts";
 import mongoose from "mongoose";
+import { dev_url_back } from "../config.ts";
+
 
 interface ProductBody {
   storeId: string;
@@ -290,16 +292,29 @@ export const sellProductController = async (
   session.startTransaction();
 
   try {
-    const { products, storeId, giftMount = 0, storeName, cashierId, boxId } = req.body;
+    const {
+      products,
+      storeId,
+      giftMount = 0,
+      storeName,
+      cashierId,
+      boxId
+    } = req.body;
 
     if (!products?.length) {
       return res.status(400).json({ message: "No products provided" });
     }
 
-    const paymentDiscounts: Record<number, number> = { 1: 0, 2: 20, 3: 30, 4: 40 };
+    const paymentDiscounts: Record<number, number> = {
+      1: 0,
+      2: 20,
+      3: 30,
+      4: 40
+    };
 
     const hoyInicio = new Date();
     hoyInicio.setHours(0, 0, 0, 0);
+
     const hoyFin = new Date();
     hoyFin.setHours(23, 59, 59, 999);
 
@@ -311,14 +326,17 @@ export const sellProductController = async (
     const productBulkOps: any[] = [];
 
     // =========================
-    // Calcular totales por producto
+    // Calcular montos por producto
     // =========================
     const calculatedProducts = products.map(product => {
       const paymentDiscount = paymentDiscounts[product.paymentType] || 0;
       const totalDiscount = paymentDiscount + (product.productDiscount || 0);
 
-      let discountedSubTotal = product.subTotalPrice - (product.subTotalPrice * totalDiscount) / 100;
+      let discountedSubTotal =
+        product.subTotalPrice -
+        (product.subTotalPrice * totalDiscount) / 100;
 
+      // Aplicar gift card
       if (remainingGiftCardMount > 0) {
         if (discountedSubTotal <= remainingGiftCardMount) {
           remainingGiftCardMount -= discountedSubTotal;
@@ -329,91 +347,118 @@ export const sellProductController = async (
         }
       }
 
-      const netTotal = Math.max(0, discountedSubTotal - product.taxes);
+      const totalEarned = Math.max(
+        0,
+        discountedSubTotal - product.productTaxe
+      );
 
       storeSubTotal += discountedSubTotal;
-      storeTaxes += product.taxes;
+      storeTaxes += product.productTaxe;
 
       return {
         ...product,
-        finalSubTotal: discountedSubTotal,
-        netTotal,
-        totalDiscount
+        subTotalEarned: discountedSubTotal,
+        totalEarned,
+        totalDiscount,
+        totalTaxes: product.productTaxe
       };
     });
 
     // =========================
-    // Crear venta en MercadoPago
+    // Total a cobrar (MP)
+    // =========================
+    const totalToPay = calculatedProducts.reduce(
+      (acc, p) => acc + p.subTotalEarned,
+      0
+    );
+
+    // =========================
+    // Crear orden MercadoPago
     // =========================
     const orderId = uuidv4();
+
     const mpResponse = await mp.instoreOrders.create({
       body: {
         external_reference: orderId,
         title: `Venta de productos ${storeName}`,
-        total_amount: storeSubTotal,
+        total_amount: totalToPay,
         items: [
           {
             sku_number: orderId,
             title: "Venta de productos",
-            unit_price: storeSubTotal,
+            unit_price: totalToPay,
             quantity: 1,
             unit_measure: "unit",
-            total_amount: storeSubTotal
+            total_amount: totalToPay
           }
         ],
         store_id: storeId,
-        notification_url: "https://TU_URL/api/payments/webhook"
+        notification_url: `${dev_url_back}/api/payments/webhook`
       }
     });
 
     // =========================
-    // Preparar operaciones DB
+    // Operaciones DB
     // =========================
     for (const product of calculatedProducts) {
-      // Actualizar inventario
+      // Stock
       productBulkOps.push({
         updateOne: {
-          filter: { _id: product.productMongoId, storeId: product.storeId },
+          filter: {
+            _id: product.productMongoId,
+            storeId: product.storeId
+          },
           update: {
             $inc: {
               productQuantity: -product.productQuantity,
               totalSells: product.productQuantity,
-              totalTaxes: product.taxes,
-              subTotalEarned: product.finalSubTotal,
-              totalEarned: product.netTotal
+              totalTaxes: product.totalTaxes,
+              subTotalEarned: product.subTotalEarned,
+              totalEarned: product.totalEarned
             }
           }
         }
       });
 
-      // Insertar venta en SellSchema
+      // Venta
       sellsToInsert.push({
         storeId: product.storeId,
         sproductId: product.productMongoId,
         sellDate: new Date(),
         sellUnityPrice: product.unityPrice,
         sellQuantity: product.productQuantity,
-        sellSubTotal: product.finalSubTotal,
-        sellTaxes: product.taxes,
-        sellTotal: product.netTotal,
+
+        // ⚠️ NO SE TOCAN
+        sellSubTotal: product.subTotalEarned,
+        sellTaxes: product.totalTaxes,
+        sellTotal: product.totalEarned,
+
         discount: product.totalDiscount,
         paymentType: product.paymentType,
         ticketNumber: `T-${uuidv4()}`,
         ticketEmisionDate: new Date(),
         storeName,
         cashierId,
-        boxId // Guardamos la caja donde se vendió
+        boxId
       });
     }
 
-    if (productBulkOps.length) await productModel.bulkWrite(productBulkOps, { session });
-    if (sellsToInsert.length) await sellModel.insertMany(sellsToInsert, { session });
+    if (productBulkOps.length) {
+      await productModel.bulkWrite(productBulkOps, { session });
+    }
+
+    if (sellsToInsert.length) {
+      await sellModel.insertMany(sellsToInsert, { session });
+    }
 
     // =========================
-    // Actualizar Store
+    // Store
     // =========================
     const storeUpdateResult = await storeModel.updateOne(
-      { _id: storeId, "months.monthDate": { $gte: hoyInicio, $lte: hoyFin } },
+      {
+        _id: storeId,
+        "months.monthDate": { $gte: hoyInicio, $lte: hoyFin }
+      },
       {
         $inc: {
           "months.$.monthMount": storeSubTotal,
@@ -429,15 +474,24 @@ export const sellProductController = async (
       await storeModel.updateOne(
         { _id: storeId },
         {
-          $push: { months: { monthDate: new Date(), monthMount: storeSubTotal, taxesMonth: storeTaxes } },
-          $inc: { storeSubTotalEarned: storeSubTotal, storeTotalEarned: storeSubTotal - storeTaxes }
+          $push: {
+            months: {
+              monthDate: new Date(),
+              monthMount: storeSubTotal,
+              taxesMonth: storeTaxes
+            }
+          },
+          $inc: {
+            storeSubTotalEarned: storeSubTotal,
+            storeTotalEarned: storeSubTotal - storeTaxes
+          }
         },
         { session }
       );
     }
 
     // =========================
-    // Actualizar Caja
+    // Caja
     // =========================
     await boxesModel.updateOne(
       { _id: boxId, storeId, cashierId },
@@ -458,9 +512,13 @@ export const sellProductController = async (
     await session.abortTransaction();
     session.endSession();
     console.error(error);
-    return res.status(500).json({ message: "Error processing sale", error });
+    return res.status(500).json({
+      message: "Error processing sale",
+      error
+    });
   }
 };
+
 
 
 

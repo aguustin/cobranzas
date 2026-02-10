@@ -333,9 +333,11 @@ export const StoreResume = () => {
 
         {/* Acciones Rápidas */}
         <div className="flex flex-wrap gap-4">
-          <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all ">
-            Nueva Venta
-          </button>
+          <Link to={`/new_sell/${storeId}`}>
+            <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all ">
+              Nueva Venta
+            </button>
+          </Link>
           <button className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all ">
             Ver Ventas del Día
           </button>

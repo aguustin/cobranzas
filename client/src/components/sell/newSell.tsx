@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Trash2, ShoppingCart, DollarSign, Package, CreditCard, Banknote } from 'lucide-react';
+import { listProductsRequest } from '../../api/productRequests';
+import { useParams } from 'react-router-dom';
 
 const NewSell = () => {
   // Estado para productos disponibles (simulando base de datos)
+  const { storeId } = useParams<{ storeId: string}>();
   const [availableProducts, setAvailableProducts] = useState([]);
   
   // Estado para el formulario actual
   const [formData, setFormData] = useState({
-    productMongoId: '',
+    productId: '',
     productName: '',
-    unityPrice: 0,
-    finalSubTotal: 0,
-    taxes: 0,
-    netTotal: 0,
+    productPrice: 0,
+    subTotalEarned: 0,
+    productTaxe: 0,
+    totalEarned: 0,
     paymentType: 'efectivo',
     productQuantity: 1
   });
@@ -22,90 +25,56 @@ const NewSell = () => {
 
   // Simular obtención de productos de la base de datos
   useEffect(() => {
-    getProductInfo();
+    const listProducts = async () => {
+      const filter = 1
+      const res = await listProductsRequest({storeId, filter});
+      setAvailableProducts(res.data);
+    }
+    listProducts()
   }, []);
-
-  // Función que simula obtener productos de la BD
-  const getProductInfo = async () => {
-    // Simulación de datos que vendrían de tu backend
-    const mockProducts = [
-      { 
-        _id: '507f1f77bcf86cd799439011',
-        name: 'Camisa Casual Azul',
-        price: 4500,
-        discount: 10,
-        tax: 21,
-        stock: 45
-      },
-      { 
-        _id: '507f1f77bcf86cd799439012',
-        name: 'Pantalón Denim Negro',
-        price: 6500,
-        discount: 5,
-        tax: 21,
-        stock: 32
-      },
-      { 
-        _id: '507f1f77bcf86cd799439013',
-        name: 'Vestido Floral Verano',
-        price: 5500,
-        discount: 15,
-        tax: 21,
-        stock: 28
-      },
-      { 
-        _id: '507f1f77bcf86cd799439014',
-        name: 'Chaqueta Cuero Premium',
-        price: 12000,
-        discount: 0,
-        tax: 21,
-        stock: 15
-      },
-    ];
-    
-    setAvailableProducts(mockProducts);
-  };
-
+  console.log('avaible products: ' , availableProducts)
   // Calcular valores automáticamente cuando se selecciona un producto o cambia cantidad
   const calculateValues = (product, quantity) => {
     if (!product) return;
-
-    const priceAfterDiscount = product.price * (1 - product.discount / 100);
+    console.log(product, ' ', quantity)
+    const priceAfterDiscount = product.productPrice * (1 - product.productDiscount / 100);
     const subtotal = priceAfterDiscount * quantity;
-    const taxAmount = subtotal * (product.tax / 100);
+    const taxAmount = subtotal * (product.productTaxe / 100);
     const total = subtotal + taxAmount;
 
     return {
-      productMongoId: product._id,
-      productName: product.name,
-      unityPrice: product.price,
-      finalSubTotal: subtotal,
-      taxes: taxAmount,
-      netTotal: total
+      productId: product._id,
+      productName: product.productName,
+      productPrice: product.productPrice,
+      subTotalEarned: subtotal,
+      productTaxe: taxAmount,
+      totalEarned: total
     };
   };
 
   // Manejar selección de producto
   const handleProductSelect = (e) => {
     const productId = e.target.value;
+    console.log(productId)
     const selectedProduct = availableProducts.find(p => p._id === productId);
-    
+    console.log('selected: ', selectedProduct)
     if (selectedProduct) {
       const calculatedValues = calculateValues(selectedProduct, formData.productQuantity);
       setFormData(prev => ({
         ...prev,
         ...calculatedValues
       }));
+      console.log('form data: ', formData)
     } else {
       // Limpiar si no hay producto seleccionado
       setFormData(prev => ({
         ...prev,
-        productMongoId: '',
+        productId: '',
         productName: '',
-        unityPrice: 0,
-        finalSubTotal: 0,
-        taxes: 0,
-        netTotal: 0
+        productPrice: 0,
+        subTotalEarned: 0,
+        productTaxe: 0,
+        totalEarned: 0
       }));
     }
   };
@@ -113,7 +82,7 @@ const NewSell = () => {
   // Manejar cambio de cantidad
   const handleQuantityChange = (e) => {
     const quantity = Number(e.target.value);
-    const selectedProduct = availableProducts.find(p => p._id === formData.productMongoId);
+    const selectedProduct = availableProducts.find(p => p._id === formData.productId);
     
     if (selectedProduct) {
       const calculatedValues = calculateValues(selectedProduct, quantity);
@@ -134,7 +103,7 @@ const NewSell = () => {
 
   // Agregar producto al carrito
   const addProduct = () => {
-    if (!formData.productMongoId) {
+    if (!formData.productId) {
       alert('Por favor selecciona un producto');
       return;
     }
@@ -149,12 +118,12 @@ const NewSell = () => {
 
     // Limpiar formulario
     setFormData({
-      productMongoId: '',
+      productId: '',
       productName: '',
-      unityPrice: 0,
-      finalSubTotal: 0,
-      taxes: 0,
-      netTotal: 0,
+      productPrice: 0,
+      subTotalEarned: 0,
+      productTaxe: 0,
+      totalEarned: 0,
       paymentType: 'efectivo',
       productQuantity: 1
     });
@@ -170,9 +139,9 @@ const NewSell = () => {
 
   // Calcular totales del carrito
   const cartTotals = {
-    subtotal: products.reduce((sum, p) => sum + p.finalSubTotal, 0),
-    taxes: products.reduce((sum, p) => sum + p.taxes, 0),
-    total: products.reduce((sum, p) => sum + p.netTotal, 0)
+    subtotal: products.reduce((sum, p) => sum + p.subTotalEarned, 0),
+    productTaxe: products.reduce((sum, p) => sum + p.productTaxe, 0),
+    total: products.reduce((sum, p) => sum + p.totalEarned, 0)
   };
 
   const formatCurrency = (amount) => {
@@ -215,7 +184,7 @@ const NewSell = () => {
                     <option value="">Seleccionar producto...</option>
                     {availableProducts.map((product) => (
                       <option key={product._id} value={product._id}>
-                        {product.name} - {formatCurrency(product.price)} (Stock: {product.stock})
+                        {product.productName} - {formatCurrency(product.productPrice)} (Stock: {product.productQuantity})
                       </option>
                     ))}
                   </select>
@@ -223,25 +192,25 @@ const NewSell = () => {
               </div>
 
               {/* Campos Automáticos */}
-              {formData.productMongoId && (
+              {formData.productId && (
                 <div className="mb-6 p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
                   <h3 className="text-sm font-semibold text-indigo-300 mb-3">Información del Producto</h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <span className="text-gray-400">Precio unitario:</span>
-                      <span className="text-white font-semibold ml-2">{formatCurrency(formData.unityPrice)}</span>
+                      <span className="text-white font-semibold ml-2">{formatCurrency(formData.productPrice)}</span>
                     </div>
                     <div>
                       <span className="text-gray-400">Subtotal:</span>
-                      <span className="text-white font-semibold ml-2">{formatCurrency(formData.finalSubTotal)}</span>
+                      <span className="text-white font-semibold ml-2">{formatCurrency(formData.subTotalEarned)}</span>
                     </div>
                     <div>
                       <span className="text-gray-400">Impuestos:</span>
-                      <span className="text-yellow-400 font-semibold ml-2">{formatCurrency(formData.taxes)}</span>
+                      <span className="text-yellow-400 font-semibold ml-2">{formatCurrency(formData.productTaxe)}</span>
                     </div>
                     <div>
                       <span className="text-gray-400">Total:</span>
-                      <span className="text-green-400 font-semibold ml-2">{formatCurrency(formData.netTotal)}</span>
+                      <span className="text-green-400 font-semibold ml-2">{formatCurrency(formData.totalEarned)}</span>
                     </div>
                   </div>
                 </div>
@@ -346,7 +315,7 @@ const NewSell = () => {
                            product.paymentType === 'tarjeta_credito' ? 'Crédito' :
                            product.paymentType === 'transferencia' ? 'Transfer.' : 'QR'}
                         </span>
-                        <span className="text-green-400 font-semibold">{formatCurrency(product.netTotal)}</span>
+                        <span className="text-green-400 font-semibold">{formatCurrency(product.totalEarned)}</span>
                       </div>
                     </div>
                   ))
@@ -362,7 +331,7 @@ const NewSell = () => {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Impuestos:</span>
-                    <span className="text-yellow-400 font-semibold">{formatCurrency(cartTotals.taxes)}</span>
+                    <span className="text-yellow-400 font-semibold">{formatCurrency(cartTotals.productTaxe)}</span>
                   </div>
                   <div className="flex justify-between text-lg pt-2 border-t border-gray-700">
                     <span className="text-gray-200 font-bold">Total:</span>
