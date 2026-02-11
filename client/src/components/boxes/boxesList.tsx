@@ -12,9 +12,6 @@ const BoxesList = () => {
 
   useEffect(() => {
    // espera hasta que haya sesión
-  const data = {
-    storeId: storeId,
-  };
 
   const getBoxesList = async () => {
     const res = await getBoxesListRequest({storeId});

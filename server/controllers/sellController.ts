@@ -10,282 +10,49 @@ import mongoose from "mongoose";
 import { dev_url_back } from "../config.ts";
 
 
-interface ProductBody {
-  storeId: string;
-  storeName: string;
-  productMongoId: string;
-  productName: string;
-  productPrice: number;
-  productQuantity: number;
-  productDiscount: number;
-  paymentType: number;
-  taxes: number;
-  unityPrice: number;
-  subTotalPrice: number;
-  totalPrice: number;
-  sizes: string;
-}
 
 
-interface SellBody {
-  sproductId:string,
-  sellDate:Date,
-  sellUnityPrice:number,
-  sellSubTotal:number,
-  sellTaxes:number,
-  sellTotal:number,
-  cupon:number,
-  discount:number,
-  paymentType:number,
-  ticketNumber:number,
-  ticketEmisionDate:Date
-}
+
+export const getSellDataController = async (
+  req: Request<{}, {}, {}, { storeId: string; cashierId: string }>,
+  res: Response
+) => {
+  try {
+    const { storeId, cashierId } = req.query;
+   const [store, box] = await Promise.all([
+      storeModel.findById(storeId).select("storeName"),
+      boxesModel.findOne({ storeId, cashierId, isOpen: true }).select("_id")
+    ]);
+
+
+    return res.status(200).json({
+      storeName: store.storeName,
+      boxId: box!._id
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error getting sell data"
+    });
+  }
+};
 
 
 
 /*export const sellProductController = async (
-    req: Request<{}, {}, {
-    products: ProductBody[],
-    storeId: string,
-    giftMount: number,
-    storeName: string,
-    cashierId: string,
-    boxId: string
-  }>,
-  res: Response
-): Promise<Response> => {
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const {
-      products,
-      storeId,
-      giftMount = 0,
-      storeName,
-      cashierId,
-      boxId
-    } = req.body;
-
-    if (!products?.length) {
-      return res.status(400).json({ message: "No products provided" });
+  req: Request<
+    {},
+    {},
+    {
+      products: ProductBody[];
+      storeId: string;
+      giftMount: number;
+      storeName: string;
+      cashierId: string;
+      boxId: string;
     }
-
-    const paymentDiscounts: Record<number, number> = {
-      1: 0,
-      2: 20,
-      3: 30,
-      4: 40
-    };
-
-    const hoyInicio = new Date();
-    hoyInicio.setHours(0, 0, 0, 0);
-
-    const hoyFin = new Date();
-    hoyFin.setHours(23, 59, 59, 999);
-
-    let remainingGiftCardMount = giftMount;
-    let storeSubTotal = 0;
-    let storeTaxes = 0;
-
-    const sellsToInsert: any[] = [];
-    const productBulkOps: any[] = [];
-
-    // =========================
-    //  Calcular totales
-    // =========================
-    const calculatedProducts = products.map(product => {
-      const paymentDiscount = paymentDiscounts[product.paymentType] || 0;
-      const totalDiscount = paymentDiscount + (product.productDiscount || 0);
-
-      const discountedSubTotal =
-        product.subTotalPrice -
-        (product.subTotalPrice * totalDiscount) / 100;
-
-      let finalSubTotal = discountedSubTotal;
-
-      if (remainingGiftCardMount > 0) {
-        if (finalSubTotal <= remainingGiftCardMount) {
-          remainingGiftCardMount -= finalSubTotal;
-          finalSubTotal = 0;
-        } else {
-          finalSubTotal -= remainingGiftCardMount;
-          remainingGiftCardMount = 0;
-        }
-      }
-
-      const netTotal = Math.max(0, finalSubTotal - product.taxes);
-
-      storeSubTotal += finalSubTotal;
-      storeTaxes += product.taxes;
-
-      return {
-        ...product,
-        finalSubTotal,
-        netTotal,
-        totalDiscount
-      };
-    });
-
-    // =========================
-    //  MercadoPago
-    // =========================
-    const orderId = uuidv4();
-
-    const mpResponse = await mp.instoreOrders.create({
-      body: {
-        external_reference: orderId,
-        title: `Venta de productos ${storeName}`,
-        total_amount: storeSubTotal,
-        items: [
-          {
-            sku_number: orderId,
-            title: "Venta de productos",
-            unit_price: storeSubTotal,
-            quantity: 1,
-            unit_measure: "unit",
-            total_amount: storeSubTotal
-          }
-        ],
-        store_id: storeId,
-        notification_url: "https://TU_URL/api/payments/webhook"
-      }
-    });
-
-    // =========================
-    //  DB Operations
-    // =========================
-    for (const product of calculatedProducts) {
-
-      productBulkOps.push({
-        updateOne: {
-          filter: {
-            _id: product.productMongoId,
-            storeId: product.storeId
-          },
-          update: {
-            $inc: {
-              productQuantity: -product.productQuantity,
-              totalSells: product.productQuantity,
-              totalTaxes: product.taxes,
-              subTotalEarned: product.finalSubTotal,
-              totalEarned: product.netTotal
-            }
-          }
-        }
-      });
-
-      sellsToInsert.push({
-        storeId: product.storeId,
-        sproductId: product.productMongoId,
-        sellDate: new Date(),
-        sellUnityPrice: product.unityPrice,
-        sellQuantity: product.productQuantity,
-        sellSubTotal: product.finalSubTotal,
-        sellTaxes: product.taxes,
-        sellTotal: product.netTotal,
-        discount: product.totalDiscount,
-        paymentType: product.paymentType,
-        ticketNumber: `T-${uuidv4()}`,
-        ticketEmisionDate: new Date(),
-        storeName,
-        cashierId
-      });
-    }
-
-    await productModel.bulkWrite(productBulkOps, { session });
-
-    const storeUpdateResult = await storeModel.updateOne(
-      {
-        _id: storeId,
-        "months.monthDate": { $gte: hoyInicio, $lte: hoyFin }
-      },
-      {
-        $inc: {
-          "months.$.monthMount": storeSubTotal,
-          "months.$.taxesMonth": storeTaxes,
-          storeSubTotalEarned: storeSubTotal,
-          storeTotalEarned: storeSubTotal - storeTaxes
-        }
-      },
-      { session }
-    );
-
-    await boxesModel.updateOne(
-      { _id: boxId, storeId, cashierId },
-      {
-        $inc: { totalMoneyInBox: storeSubTotal - storeTaxes }
-      },
-      { upsert: true, session } // Crea la caja si no existe
-    );
-
-
-    if (storeUpdateResult.matchedCount === 0) {
-      await storeModel.updateOne(
-        { _id: storeId },
-        {
-          $push: {
-            months: {
-              monthDate: new Date(),
-              monthMount: storeSubTotal,
-              taxesMonth: storeTaxes
-            }
-          },
-          $inc: {
-            storeSubTotalEarned: storeSubTotal,
-            storeTotalEarned: storeSubTotal - storeTaxes
-          }
-        },
-        { session }
-      );
-      await boxesModel.updateOne(
-        {_id: boxId},
-        {
-          $inc:{
-            totalMoneyInBox: storeSubTotal - storeTaxes
-          }
-        }
-      )
-    }
-
-    await sellModel.insertMany(sellsToInsert, { session });
-
-
-    await session.commitTransaction();
-    session.endSession();
-
-    // =========================
-    // 4️⃣ Response
-    // =========================
-    return res.status(200).json({
-      message: "Venta realizada",
-      qr_data: mpResponse.qr_data,
-      qr_image: mpResponse.qr_image,
-      remainingGiftCardMount
-    });
-
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-
-    console.error(error);
-    return res.status(500).json({
-      message: "Error processing sale"
-    });
-  }
-};*/
-
-
-export const sellProductController = async (
-  req: Request<{}, {}, {
-    products: ProductBody[];
-    storeId: string;
-    giftMount: number;
-    storeName: string;
-    cashierId: string;
-    boxId: string;
-  }>,
+  >,
   res: Response
 ) => {
   const session = await mongoose.startSession();
@@ -305,11 +72,11 @@ export const sellProductController = async (
       return res.status(400).json({ message: "No products provided" });
     }
 
-    const paymentDiscounts: Record<number, number> = {
-      1: 0,
-      2: 20,
-      3: 30,
-      4: 40
+    const paymentDiscounts: Record<string, number> = {
+      efectivo: 0,
+      tarjeta_debito: 20,
+      tarjeta_credito: 30,
+      transferencia: 40
     };
 
     const hoyInicio = new Date();
@@ -326,15 +93,21 @@ export const sellProductController = async (
     const productBulkOps: any[] = [];
 
     // =========================
-    // Calcular montos por producto
+    // Calcular montos en backend
     // =========================
     const calculatedProducts = products.map(product => {
-      const paymentDiscount = paymentDiscounts[product.paymentType] || 0;
-      const totalDiscount = paymentDiscount + (product.productDiscount || 0);
+      const paymentDiscount =
+        paymentDiscounts[product.paymentType] || 0;
+
+      const totalDiscount =
+        paymentDiscount + (product.productDiscount || 0);
+
+      const subTotalPrice =
+        product.productPrice * product.productQuantity;
 
       let discountedSubTotal =
-        product.subTotalPrice -
-        (product.subTotalPrice * totalDiscount) / 100;
+        subTotalPrice -
+        (subTotalPrice * totalDiscount) / 100;
 
       // Aplicar gift card
       if (remainingGiftCardMount > 0) {
@@ -365,16 +138,13 @@ export const sellProductController = async (
     });
 
     // =========================
-    // Total a cobrar (MP)
+    // Total a cobrar (MercadoPago)
     // =========================
     const totalToPay = calculatedProducts.reduce(
       (acc, p) => acc + p.subTotalEarned,
       0
     );
 
-    // =========================
-    // Crear orden MercadoPago
-    // =========================
     const orderId = uuidv4();
 
     const mpResponse = await mp.instoreOrders.create({
@@ -401,12 +171,12 @@ export const sellProductController = async (
     // Operaciones DB
     // =========================
     for (const product of calculatedProducts) {
-      // Stock
+      // Actualizar stock
       productBulkOps.push({
         updateOne: {
           filter: {
-            _id: product.productMongoId,
-            storeId: product.storeId
+            _id: product.productId,
+            storeId
           },
           update: {
             $inc: {
@@ -420,19 +190,16 @@ export const sellProductController = async (
         }
       });
 
-      // Venta
+      // Insertar venta
       sellsToInsert.push({
-        storeId: product.storeId,
-        sproductId: product.productMongoId,
+        storeId,
+        sproductId: product.productId,
         sellDate: new Date(),
-        sellUnityPrice: product.unityPrice,
+        sellUnityPrice: product.productPrice,
         sellQuantity: product.productQuantity,
-
-        // ⚠️ NO SE TOCAN
         sellSubTotal: product.subTotalEarned,
         sellTaxes: product.totalTaxes,
         sellTotal: product.totalEarned,
-
         discount: product.totalDiscount,
         paymentType: product.paymentType,
         ticketNumber: `T-${uuidv4()}`,
@@ -452,7 +219,7 @@ export const sellProductController = async (
     }
 
     // =========================
-    // Store
+    // Actualizar Store
     // =========================
     const storeUpdateResult = await storeModel.updateOne(
       {
@@ -491,12 +258,12 @@ export const sellProductController = async (
     }
 
     // =========================
-    // Caja
+    // Actualizar Caja
     // =========================
     await boxesModel.updateOne(
       { _id: boxId, storeId, cashierId },
       { $inc: { totalMoneyInBox: storeSubTotal - storeTaxes } },
-      { upsert: true, session }
+      { session }
     );
 
     await session.commitTransaction();
@@ -508,18 +275,197 @@ export const sellProductController = async (
       qr_image: mpResponse.qr_image,
       remainingGiftCardMount
     });
+
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
     console.error(error);
+
     return res.status(500).json({
       message: "Error processing sale",
       error
     });
   }
+};*/
+
+
+export const sellProductController = async (
+  req: Request<{}, {}, {
+    products: { productId: string; productQuantity: number; paymentType: string; productDiscount: number }[];
+    storeId: string;
+    giftMount: number;
+    storeName: string;
+    cashierId: string;
+    boxId: string;
+  }>,
+  res: Response
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { products, storeId, giftMount = 0, storeName, cashierId, boxId } = req.body;
+
+    if (!products?.length) {
+      return res.status(400).json({ message: "No products provided" });
+    }
+
+    const paymentDiscounts: Record<string, number> = {
+      efectivo: 0,
+      tarjeta_debito: 20,
+      tarjeta_credito: 30,
+      transferencia: 40
+    };
+
+    let remainingGiftCardMount = giftMount;
+    let storeSubTotal = 0;
+    let storeTaxes = 0;
+
+    const sellsToInsert: any[] = [];
+    const calculatedProducts: any[] = [];
+
+    // =========================
+    // Calcular montos según DB
+    // =========================
+    for (const p of products) {
+      const productFromDB = await productModel.findById(p.productId);
+      if (!productFromDB) throw new Error(`Producto no encontrado: ${p.productId}`);
+
+      const subTotalPrice = productFromDB.productPrice * p.productQuantity;
+      const totalDiscount = (paymentDiscounts[p.paymentType] || 0) + (p.productDiscount || 0);
+
+      let discountedSubTotal = subTotalPrice - (subTotalPrice * totalDiscount) / 100;
+
+      if (remainingGiftCardMount > 0) {
+        if (discountedSubTotal <= remainingGiftCardMount) {
+          remainingGiftCardMount -= discountedSubTotal;
+          discountedSubTotal = 0;
+        } else {
+          discountedSubTotal -= remainingGiftCardMount;
+          remainingGiftCardMount = 0;
+        }
+      }
+
+      const totalEarned = Math.max(0, discountedSubTotal - productFromDB.productTaxe);
+
+      storeSubTotal += discountedSubTotal;
+      storeTaxes += productFromDB.productTaxe;
+
+      calculatedProducts.push({
+        ...p,
+        productPrice: productFromDB.productPrice,
+        productTaxe: productFromDB.productTaxe,
+        subTotalEarned: discountedSubTotal,
+        totalEarned,
+        totalDiscount
+      });
+    }
+
+    // =========================
+    // Total a pagar para MP
+    // =========================
+    const totalToPay = calculatedProducts.reduce((acc, p) => acc + p.subTotalEarned, 0);
+    const orderId = uuidv4();
+
+    const mpResponse = await mp.instoreOrders.create({
+      body: {
+        external_reference: orderId,
+        title: `Venta de productos ${storeName}`,
+        total_amount: totalToPay,
+        items: [
+          {
+            sku_number: orderId,
+            title: "Venta de productos",
+            unit_price: totalToPay,
+            quantity: 1,
+            unit_measure: "unit",
+            total_amount: totalToPay
+          }
+        ],
+        store_id: storeId,
+        notification_url: `${dev_url_back}/api/payments/webhook`
+      }
+    });
+
+    // =========================
+    // Actualizar stock en paralelo
+    // =========================
+    const stockUpdates = calculatedProducts.map(product =>
+      productModel.updateOne(
+        { _id: product.productId, storeId, productQuantity: { $gte: product.productQuantity } },
+        { $inc: { productQuantity: -product.productQuantity } },
+        { session }
+      )
+    );
+
+    const stockResults = await Promise.all(stockUpdates);
+
+    // Verificar que todos los productos tuvieron stock suficiente
+    stockResults.forEach((result, i) => {
+      if (result.matchedCount === 0) {
+        throw new Error(`Stock insuficiente para ${calculatedProducts[i].productId}`);
+      }
+    });
+
+    // =========================
+    // Preparar ventas para insertar
+    // =========================
+    for (const product of calculatedProducts) {
+      sellsToInsert.push({
+        storeId,
+        sproductId: product.productId,
+        sellDate: new Date(),
+        sellUnityPrice: product.productPrice,
+        sellQuantity: product.productQuantity,
+        sellSubTotal: product.subTotalEarned,
+        sellTaxes: product.productTaxe,
+        sellTotal: product.totalEarned,
+        discount: product.totalDiscount,
+        paymentType: product.paymentType,
+        ticketNumber: `T-${uuidv4()}`,
+        ticketEmisionDate: new Date(),
+        storeName,
+        cashierId,
+        boxId
+      });
+    }
+
+    if (sellsToInsert.length) {
+      await sellModel.insertMany(sellsToInsert, { session });
+    }
+
+    // =========================
+    // Actualizar caja y store
+    // =========================
+    await boxesModel.updateOne(
+      { _id: boxId, storeId, cashierId },
+      { $inc: { totalMoneyInBox: storeSubTotal - storeTaxes } },
+      { session, upsert: true }
+    );
+
+    await storeModel.updateOne(
+      { _id: storeId },
+      { $inc: { storeSubTotalEarned: storeSubTotal, storeTotalEarned: storeSubTotal - storeTaxes } },
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.status(200).json({
+      message: "Venta realizada",
+      qr_data: mpResponse.qr_data,
+      qr_image: mpResponse.qr_image,
+      remainingGiftCardMount
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error(error);
+    return res.status(500).json({ message: "Error processing sale", error });
+  }
 };
-
-
 
 
 

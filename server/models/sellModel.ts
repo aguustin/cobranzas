@@ -12,7 +12,7 @@ const SellSchema = new mongoose.Schema<SellI>({
     sellTotal:{type: Number, default: 0},
     cupon:{type: Number},
     discount:{type: Number},
-    paymentType:{type: Number},
+    paymentType:{type: String},
     ticketNumber:{type: String},
     ticketEmisionDate:{type: Date},
     storeName:{type:String},

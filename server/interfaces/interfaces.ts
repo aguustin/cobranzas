@@ -86,7 +86,7 @@ export interface SellI{
     sellTotal:number;
     cupon:number;
     discount:number;
-    paymentType:number;
+    paymentType:string;
     ticketNumber:string;
     ticketEmisionDate:Date;
     storeName:string;
