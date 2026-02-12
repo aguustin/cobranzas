@@ -8,10 +8,11 @@ import boxesModel from "../models/boxModel.ts";
 import storeModel from "../models/storeModel.ts";
 import mongoose from "mongoose";
 import { dev_url_back } from "../config.ts";
+import { Order, Preference } from "mercadopago";
 
 
 
-
+const preference = new Preference(mp);
 
 export const getSellDataController = async (
   req: Request<{}, {}, {}, { storeId: string; cashierId: string }>,
@@ -289,6 +290,47 @@ export const getSellDataController = async (
 };*/
 
 
+const createOrder = async (orderId: string, storeId: string, totalToPay: number, cashierId: string, boxId: string) => {
+ 
+
+  try {
+    const mpResponse = await preference.create({
+      body: {
+        external_reference: orderId,
+        items: [
+          {
+            id: uuidv4(),
+            title: "Venta de productos",
+            unit_price: Number(totalToPay),
+            quantity: 1
+          }
+        ],
+        metadata:{
+          storeId,
+          cashierId,
+          boxId
+        },
+        notification_url: "https://03ae-200-32-101-183.ngrok-free.app/api/payments/webhook",
+        back_urls: {
+          success: "https://03ae-200-32-101-183.ngrok-free.app/success",
+          failure: "https://03ae-200-32-101-183.ngrok-free.app/failure",
+          pending: "https://03ae-200-32-101-183.ngrok-free.app/pending"
+        }
+      }
+    });
+    
+    // URL del QR o link de pago
+    return {
+      qr_link: mpResponse.init_point, // este es el link que genera QR dinámico
+      id: mpResponse.id
+    };
+    
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 export const sellProductController = async (
   req: Request<{}, {}, {
     products: { productId: string; productQuantity: number; paymentType: string; productDiscount: number }[];
@@ -300,8 +342,8 @@ export const sellProductController = async (
   }>,
   res: Response
 ) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  /*const session = await mongoose.startSession();
+  session.startTransaction();*/
 
   try {
     const { products, storeId, giftMount = 0, storeName, cashierId, boxId } = req.body;
@@ -364,28 +406,11 @@ export const sellProductController = async (
     // =========================
     // Total a pagar para MP
     // =========================
-    const totalToPay = calculatedProducts.reduce((acc, p) => acc + p.subTotalEarned, 0);
+    const totalToPay: number = calculatedProducts.reduce((acc, p) => acc + p.subTotalEarned, 0);
     const orderId = uuidv4();
 
-    const mpResponse = await mp.instoreOrders.create({
-      body: {
-        external_reference: orderId,
-        title: `Venta de productos ${storeName}`,
-        total_amount: totalToPay,
-        items: [
-          {
-            sku_number: orderId,
-            title: "Venta de productos",
-            unit_price: totalToPay,
-            quantity: 1,
-            unit_measure: "unit",
-            total_amount: totalToPay
-          }
-        ],
-        store_id: storeId,
-        notification_url: `${dev_url_back}/api/payments/webhook`
-      }
-    });
+    const { qr_link, id: mpOrderId } = await createOrder(orderId, storeId, totalToPay, cashierId, boxId);
+
 
     // =========================
     // Actualizar stock en paralelo
@@ -394,7 +419,7 @@ export const sellProductController = async (
       productModel.updateOne(
         { _id: product.productId, storeId, productQuantity: { $gte: product.productQuantity } },
         { $inc: { productQuantity: -product.productQuantity } },
-        { session }
+        //{ session }
       )
     );
 
@@ -431,7 +456,7 @@ export const sellProductController = async (
     }
 
     if (sellsToInsert.length) {
-      await sellModel.insertMany(sellsToInsert, { session });
+      await sellModel.insertMany(sellsToInsert/*, { session }*/);
     }
 
     // =========================
@@ -440,28 +465,28 @@ export const sellProductController = async (
     await boxesModel.updateOne(
       { _id: boxId, storeId, cashierId },
       { $inc: { totalMoneyInBox: storeSubTotal - storeTaxes } },
-      { session, upsert: true }
+      { /*session,*/ upsert: true }
     );
 
     await storeModel.updateOne(
       { _id: storeId },
       { $inc: { storeSubTotalEarned: storeSubTotal, storeTotalEarned: storeSubTotal - storeTaxes } },
-      { session }
+      //{ session }
     );
 
-    await session.commitTransaction();
-    session.endSession();
+    /*await session.commitTransaction();
+    session.endSession();*/
 
     return res.status(200).json({
       message: "Venta realizada",
-      qr_data: mpResponse.qr_data,
-      qr_image: mpResponse.qr_image,
+      qr_link,
+      mpOrderId,
       remainingGiftCardMount
     });
 
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
+    /*await session.abortTransaction();
+    session.endSession();*/
     console.error(error);
     return res.status(500).json({ message: "Error processing sale", error });
   }
