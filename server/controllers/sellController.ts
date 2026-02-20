@@ -6,10 +6,8 @@ import { mp }  from "../lib/mp.ts";
 import voucherModel from "../models/voucherModel.ts";
 import boxesModel from "../models/boxModel.ts";
 import storeModel from "../models/storeModel.ts";
-import mongoose from "mongoose";
-import { dev_url_back } from "../config.ts";
-import { Order, Preference } from "mercadopago";
-
+import { Preference } from "mercadopago";
+import QRCode from "qrcode";
 
 
 const preference = new Preference(mp);
@@ -290,46 +288,48 @@ export const getSellDataController = async (
 };*/
 
 
-const createOrder = async (orderId: string, storeId: string, totalToPay: number, cashierId: string, boxId: string) => {
- 
+const createOrder = async (
+  orderId: string,
+  mpUserId: string,   // collector id real
+  storeId: string,                   // mp store id
+  boxId: string,                     // mp pos id
+  totalToPay: number
+) => {
 
-  try {
-    const mpResponse = await preference.create({
-      body: {
+  const response = await fetch(
+    `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${userId}/stores/${storeId}/pos/${posId}/orders`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
         external_reference: orderId,
+        title: "Venta NovaStore",
+        description: "Venta mostrador",
+        total_amount: Number(totalToPay),
         items: [
           {
-            id: uuidv4(),
-            title: "Venta de productos",
+            sku_number: "VENTA",
+            category: "others",
+            title: "Venta productos",
+            quantity: 1,
             unit_price: Number(totalToPay),
-            quantity: 1
+            total_amount: Number(totalToPay)
           }
-        ],
-        metadata:{
-          storeId,
-          cashierId,
-          boxId
-        },
-        notification_url: "https://03ae-200-32-101-183.ngrok-free.app/api/payments/webhook",
-        back_urls: {
-          success: "https://03ae-200-32-101-183.ngrok-free.app/success",
-          failure: "https://03ae-200-32-101-183.ngrok-free.app/failure",
-          pending: "https://03ae-200-32-101-183.ngrok-free.app/pending"
-        }
-      }
-    });
-    
-    // URL del QR o link de pago
-    return {
-      qr_link: mpResponse.init_point, // este es el link que genera QR dinámico
-      id: mpResponse.id
-    };
-    
-  } catch (error) {
-    console.error(error);
-    throw error;
-  }
-}
+        ]
+      })
+    }
+  );
+
+  const data = await response.json();
+
+  return {
+    qrData: data.qr_data,
+    mpOrderId: data.id
+  };
+};
 
 export const sellProductController = async (
   req: Request<{}, {}, {
@@ -409,77 +409,22 @@ export const sellProductController = async (
     const totalToPay: number = calculatedProducts.reduce((acc, p) => acc + p.subTotalEarned, 0);
     const orderId = uuidv4();
 
-    const { qr_link, id: mpOrderId } = await createOrder(orderId, storeId, totalToPay, cashierId, boxId);
+    const { qrData, mpOrderId: mpOrderId } = await createOrder(
+                                                          orderId,
+                                                          mpUserId,   // collector id real
+                                                          storeId,                   // mp store id
+                                                          boxId,                     // mp pos id
+                                                          totalToPay
+                                            );
 
-
-    // =========================
-    // Actualizar stock en paralelo
-    // =========================
-    const stockUpdates = calculatedProducts.map(product =>
-      productModel.updateOne(
-        { _id: product.productId, storeId, productQuantity: { $gte: product.productQuantity } },
-        { $inc: { productQuantity: -product.productQuantity } },
-        //{ session }
-      )
-    );
-
-    const stockResults = await Promise.all(stockUpdates);
-
-    // Verificar que todos los productos tuvieron stock suficiente
-    stockResults.forEach((result, i) => {
-      if (result.matchedCount === 0) {
-        throw new Error(`Stock insuficiente para ${calculatedProducts[i].productId}`);
-      }
-    });
-
-    // =========================
-    // Preparar ventas para insertar
-    // =========================
-    for (const product of calculatedProducts) {
-      sellsToInsert.push({
-        storeId,
-        sproductId: product.productId,
-        sellDate: new Date(),
-        sellUnityPrice: product.productPrice,
-        sellQuantity: product.productQuantity,
-        sellSubTotal: product.subTotalEarned,
-        sellTaxes: product.productTaxe,
-        sellTotal: product.totalEarned,
-        discount: product.totalDiscount,
-        paymentType: product.paymentType,
-        ticketNumber: `T-${uuidv4()}`,
-        ticketEmisionDate: new Date(),
-        storeName,
-        cashierId,
-        boxId
-      });
-    }
-
-    if (sellsToInsert.length) {
-      await sellModel.insertMany(sellsToInsert/*, { session }*/);
-    }
-
-    // =========================
-    // Actualizar caja y store
-    // =========================
-    await boxesModel.updateOne(
-      { _id: boxId, storeId, cashierId },
-      { $inc: { totalMoneyInBox: storeSubTotal - storeTaxes } },
-      { /*session,*/ upsert: true }
-    );
-
-    await storeModel.updateOne(
-      { _id: storeId },
-      { $inc: { storeSubTotalEarned: storeSubTotal, storeTotalEarned: storeSubTotal - storeTaxes } },
-      //{ session }
-    );
+    const qrImage = await QRCode.toDataURL(qrData);
 
     /*await session.commitTransaction();
     session.endSession();*/
 
     return res.status(200).json({
       message: "Venta realizada",
-      qr_link,
+      qrImage,
       mpOrderId,
       remainingGiftCardMount
     });
@@ -783,3 +728,65 @@ export const getAllStatisticsController = async (req:Request<{}, {}, {query: Que
     }))
   );
 };
+
+/** // =========================
+    // Actualizar stock en paralelo
+    // =========================
+    const stockUpdates = calculatedProducts.map(product =>
+      productModel.updateOne(
+        { _id: product.productId, storeId, productQuantity: { $gte: product.productQuantity } },
+        { $inc: { productQuantity: -product.productQuantity } },
+        //{ session }
+      )
+    );
+
+    const stockResults = await Promise.all(stockUpdates);
+
+    // Verificar que todos los productos tuvieron stock suficiente
+    stockResults.forEach((result, i) => {
+      if (result.matchedCount === 0) {
+        throw new Error(`Stock insuficiente para ${calculatedProducts[i].productId}`);
+      }
+    });
+
+    // =========================
+    // Preparar ventas para insertar
+    // =========================
+    for (const product of calculatedProducts) {
+      sellsToInsert.push({
+        storeId,
+        sproductId: product.productId,
+        sellDate: new Date(),
+        sellUnityPrice: product.productPrice,
+        sellQuantity: product.productQuantity,
+        sellSubTotal: product.subTotalEarned,
+        sellTaxes: product.productTaxe,
+        sellTotal: product.totalEarned,
+        discount: product.totalDiscount,
+        paymentType: product.paymentType,
+        ticketNumber: `T-${uuidv4()}`,
+        ticketEmisionDate: new Date(),
+        storeName,
+        cashierId,
+        boxId
+      });
+    }
+
+    if (sellsToInsert.length) {
+      await sellModel.insertMany(sellsToInsert/*, { session });
+    }
+
+    // =========================
+    // Actualizar caja y store
+    // =========================
+    await boxesModel.updateOne(
+      { _id: boxId, storeId, cashierId },
+      { $inc: { totalMoneyInBox: storeSubTotal - storeTaxes } },
+      { /*session, upsert: true }
+    );
+
+    await storeModel.updateOne(
+      { _id: storeId },
+      { $inc: { storeSubTotalEarned: storeSubTotal, storeTotalEarned: storeSubTotal - storeTaxes } },
+      //{ session }
+    ); */

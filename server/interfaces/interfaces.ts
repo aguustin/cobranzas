@@ -119,3 +119,19 @@ export interface BoxI{
     maxTransactionAmount: number;
     boxDifferenceMoney:number;
 }
+
+export interface OrderI{
+    orderId: {type: String},
+    paymentId: {type: String},
+    externalReference: {type: String},
+    storeId: {type: String},
+    storeName: {type: String},
+    cashierId: {type: String},
+    boxId: {type: String},
+    paymentType: { type: String},
+    products: [ProductI],
+    storeSubTotal: {type: Number},
+    storeTaxes: {type:Number},
+    totalToPay: {type:Number},
+    status: {type: String}
+}
