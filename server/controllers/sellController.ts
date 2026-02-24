@@ -6,8 +6,9 @@ import { mp }  from "../lib/mp.ts";
 import voucherModel from "../models/voucherModel.ts";
 import boxesModel from "../models/boxModel.ts";
 import storeModel from "../models/storeModel.ts";
-import { Preference } from "mercadopago";
+import { Payment, Preference } from "mercadopago";
 import QRCode from "qrcode";
+import orderModel from "../models/orderModel.ts";
 
 
 const preference = new Preference(mp);
@@ -18,11 +19,13 @@ export const getSellDataController = async (
 ) => {
   try {
     const { storeId, cashierId } = req.query;
-   const [store, box] = await Promise.all([
+    console.log(storeId, ' ', cashierId)
+    const [store, box] = await Promise.all([
       storeModel.findById(storeId).select("storeName"),
-      boxesModel.findOne({ storeId, cashierId, isOpen: true }).select("_id")
+      boxesModel.findOne({ storeId, cashierId, isOpen: true })
     ]);
 
+    console.log('store: ', store, ' ', 'box: ', box)
 
     return res.status(200).json({
       storeName: store.storeName,
@@ -288,68 +291,80 @@ export const getSellDataController = async (
 };*/
 
 
-const createOrder = async (
-  orderId: string,
-  mpUserId: string,   // collector id real
-  storeId: string,                   // mp store id
-  boxId: string,                     // mp pos id
-  totalToPay: number
-) => {
 
-  const response = await fetch(
-    `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${userId}/stores/${storeId}/pos/${posId}/orders`,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        external_reference: orderId,
-        title: "Venta NovaStore",
-        description: "Venta mostrador",
-        total_amount: Number(totalToPay),
-        items: [
-          {
-            sku_number: "VENTA",
-            category: "others",
-            title: "Venta productos",
-            quantity: 1,
-            unit_price: Number(totalToPay),
-            total_amount: Number(totalToPay)
-          }
-        ]
-      })
-    }
-  );
-
-  const data = await response.json();
-
-  return {
-    qrData: data.qr_data,
-    mpOrderId: data.id
-  };
-};
-
-export const sellProductController = async (
-  req: Request<{}, {}, {
-    products: { productId: string; productQuantity: number; paymentType: string; productDiscount: number }[];
-    storeId: string;
-    giftMount: number;
-    storeName: string;
-    cashierId: string;
-    boxId: string;
-  }>,
-  res: Response
-) => {
-  /*const session = await mongoose.startSession();
-  session.startTransaction();*/
-
+export const webhookHandlerController = async (req, res) => {
   try {
-    const { products, storeId, giftMount = 0, storeName, cashierId, boxId } = req.body;
+    const { type, data } = req.body
+
+    if (type !== "payment") {
+      return res.sendStatus(200)
+    }
+
+    const paymentClient = new Payment(mp)
+
+    const payment = await paymentClient.get({
+      id: data.id
+    })
+
+    if (payment.status !== "approved") {
+      return res.sendStatus(200)
+    }
+
+    const externalReference = payment.external_reference
+
+    if (!externalReference) {
+      return res.sendStatus(200)
+    }
+
+    const order = await orderModel.findOne({ externalReference })
+
+    if (!order) {
+      return res.sendStatus(200)
+    }
+
+    if (order.status === "approved") {
+      return res.sendStatus(200)
+    }
+
+    // ✅ Actualizar orden
+    order.status = "approved"
+    order.paymentId = payment.id?.toString()
+    order.paymentMethod = payment.payment_method_id
+    order.paymentStatusDetail = payment.status_detail
+    order.paidAt = new Date()
+
+    await order.save()
+
+    // ✅ Descontar stock
+    for (const item of order.products) {
+      await productModel.findByIdAndUpdate(
+        item.productId,
+        { $inc: { stock: -item.productQuantity } }
+      )
+    }
+
+    return res.sendStatus(200)
+
+  } catch (error) {
+    console.error(error)
+    return res.sendStatus(500)
+  }
+}
+
+
+export const sellProductController = async (req, res) => {
+  try {
+    const {
+      products,
+      storeId,
+      giftMount = 0,
+      storeName,
+      cashierId,
+      boxId
+    } = req.body
 
     if (!products?.length) {
-      return res.status(400).json({ message: "No products provided" });
+      return res.status(400).json({ message: "No products provided" })
     }
 
     const paymentDiscounts: Record<string, number> = {
@@ -357,87 +372,153 @@ export const sellProductController = async (
       tarjeta_debito: 20,
       tarjeta_credito: 30,
       transferencia: 40
-    };
+    }
 
-    let remainingGiftCardMount = giftMount;
-    let storeSubTotal = 0;
-    let storeTaxes = 0;
-
-    const sellsToInsert: any[] = [];
-    const calculatedProducts: any[] = [];
+    let remainingGiftCardMount = giftMount
+    let storeSubTotal = 0
+    let storeTaxes = 0
+    const calculatedProducts: any[] = []
 
     // =========================
-    // Calcular montos según DB
+    // Calcular montos reales
     // =========================
     for (const p of products) {
-      const productFromDB = await productModel.findById(p.productId);
-      if (!productFromDB) throw new Error(`Producto no encontrado: ${p.productId}`);
+      const productFromDB = await productModel.findById(p.productId)
+      if (!productFromDB)
+        throw new Error(`Producto no encontrado: ${p.productId}`)
 
-      const subTotalPrice = productFromDB.productPrice * p.productQuantity;
-      const totalDiscount = (paymentDiscounts[p.paymentType] || 0) + (p.productDiscount || 0);
+      const subTotalPrice =
+        productFromDB.productPrice * p.productQuantity
 
-      let discountedSubTotal = subTotalPrice - (subTotalPrice * totalDiscount) / 100;
+      const totalDiscount =
+        (paymentDiscounts[p.paymentType] || 0) +
+        (p.productDiscount || 0)
+
+      let discountedSubTotal =
+        subTotalPrice - (subTotalPrice * totalDiscount) / 100
 
       if (remainingGiftCardMount > 0) {
         if (discountedSubTotal <= remainingGiftCardMount) {
-          remainingGiftCardMount -= discountedSubTotal;
-          discountedSubTotal = 0;
+          remainingGiftCardMount -= discountedSubTotal
+          discountedSubTotal = 0
         } else {
-          discountedSubTotal -= remainingGiftCardMount;
-          remainingGiftCardMount = 0;
+          discountedSubTotal -= remainingGiftCardMount
+          remainingGiftCardMount = 0
         }
       }
 
-      const totalEarned = Math.max(0, discountedSubTotal - productFromDB.productTaxe);
+    
 
-      storeSubTotal += discountedSubTotal;
-      storeTaxes += productFromDB.productTaxe;
-
+      const totalEarned = Math.max(
+        0,
+        discountedSubTotal - productFromDB.productTaxe
+      )
+      
+      storeSubTotal += discountedSubTotal
+      storeTaxes += productFromDB.productTaxe
+      console.log('product taxes: ', productFromDB.productTaxe)
       calculatedProducts.push({
-        ...p,
+        productId: productFromDB._id,
+        productName: productFromDB.productName,
+        productQuantity: p.productQuantity,
         productPrice: productFromDB.productPrice,
         productTaxe: productFromDB.productTaxe,
         subTotalEarned: discountedSubTotal,
         totalEarned,
         totalDiscount
-      });
+      })
+    }
+    
+    const totalToPay = calculatedProducts.reduce(
+      (acc, p) => acc + p.subTotalEarned,
+      0
+    )
+
+    const externalReference = uuidv4()
+
+    // =========================
+    // 1️ Crear orden en tu DB (PENDING)
+    // =========================
+    const order = await orderModel.create({
+      externalReference,
+      storeId,
+      storeName,
+      cashierId,
+      boxId,
+      paymentType: "qr",
+      products: calculatedProducts,
+      storeSubTotal,
+      storeTaxes,
+      totalToPay,
+      status: "pending"
+    })
+
+    // =========================
+    // 2 Crear orden QR en Mercado Pago
+    // =========================
+
+    console.log(process.env.MP_USER_ID, ' ', storeId, ' ', boxId, 'total to pay: ', totalToPay)
+    const response = await fetch(
+      `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${process.env.MP_USER_ID}/pos/SUC001POS001/qrs`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          external_reference: externalReference,
+          title: "Venta NovaStore",
+          description: "Venta mostrador",
+          total_amount: Number(totalToPay),
+          items: [
+            {
+              sku_number: "VENTA",
+              category: "others",
+              title: "Venta productos",
+              quantity: 1,
+              unit_price: Number(totalToPay),
+              unit_measure: "unit",
+              total_amount: Number(totalToPay)
+            }
+          ]
+        })
+      }
+    )
+
+    //https://0a15-200-32-101-183.ngrok-free.app
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      // Si falla MP, eliminar orden pending
+      await orderModel.findByIdAndDelete(order._id)
+      console.log("MP STATUS:", response.status)
+      console.log("MP ERROR FULL:", data)
+      throw new Error(data.message || "Error creating MP order")
     }
 
-    // =========================
-    // Total a pagar para MP
-    // =========================
-    const totalToPay: number = calculatedProducts.reduce((acc, p) => acc + p.subTotalEarned, 0);
-    const orderId = uuidv4();
+    // Guardar id de MP
+    order.orderId = data.id
+    await order.save()
 
-    const { qrData, mpOrderId: mpOrderId } = await createOrder(
-                                                          orderId,
-                                                          mpUserId,   // collector id real
-                                                          storeId,                   // mp store id
-                                                          boxId,                     // mp pos id
-                                                          totalToPay
-                                            );
-
-    const qrImage = await QRCode.toDataURL(qrData);
-
-    /*await session.commitTransaction();
-    session.endSession();*/
+    const qrImage = await QRCode.toDataURL(data.qr_data)
 
     return res.status(200).json({
-      message: "Venta realizada",
+      message: "Venta iniciada - esperando pago",
       qrImage,
-      mpOrderId,
+      mpOrderId: data.in_store_order_id,
       remainingGiftCardMount
-    });
+    })
 
   } catch (error) {
-    /*await session.abortTransaction();
-    session.endSession();*/
-    console.error(error);
-    return res.status(500).json({ message: "Error processing sale", error });
+    console.error(error)
+    return res.status(500).json({
+      message: "Error processing sale",
+      error: error.message
+    })
   }
-};
-
-
+}
 
 export const orderByQuantityController = async (req: Request<{}, {}, {}, {storeId: string, order: number}>, res: Response): Promise<Response> => {
     const {storeId, order} = req.query

@@ -22,7 +22,7 @@ const ProductSchema = new mongoose.Schema<ProductI>({
     },
     productQuantity:{type: Number},
     productDiscount:{type: Number},
-    productTaxe: {type: Number},
+    productTaxe: {type: Number, required: true},
     totalSells:{type: Number, default: 0},
     totalTaxes:{type: Number, default: 0},
     subTotalMonthEarned:{type: Number, default: 0},

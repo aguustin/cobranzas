@@ -8,18 +8,18 @@ const CreateBox = () => {
   const {storeId} = useParams<{ storeId: string}>()
 
   const [formData, setFormData] = useState({
-    storeId: storeId,
-    boxName: '',
-    boxNumber: '',
-    totalMoneyInBox: 0,
-    location: '',
-    paymentTerminal: '',
-    printer: '',
-    maxDiscount: 20,
-    allowRefunds: true,
-    allowCashWithdrawal: false,
-    requireManagerAuth: true,
-    maxTransactionAmount: 0
+        storeId: storeId,
+        boxName: '',
+        boxNumber: '',
+        totalMoneyInBox: 0,
+        location: '',
+        paymentTerminal: '',
+        printer: '',
+        maxDiscount: 20,
+        allowRefunds: true,
+        allowCashWithdrawal: false,
+        requireManagerAuth: true,
+        maxTransactionAmount: 0
   });
 
   const handleChange = (e) => {

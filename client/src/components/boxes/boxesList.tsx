@@ -12,7 +12,7 @@ const BoxesList = () => {
 
   useEffect(() => {
    // espera hasta que haya sesión
-
+  console.log('cacshierId: ', cashierId)
   const getBoxesList = async () => {
     const res = await getBoxesListRequest({storeId});
     setBoxesData(res.data);

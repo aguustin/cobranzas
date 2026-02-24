@@ -6,12 +6,15 @@ import { BoxI, OrderI } from "../interfaces/interfaces.ts";
 const OrderSchema = new mongoose.Schema<OrderI>({
     orderId: {type: String},
     paymentId: {type: String},
+    paymentMethod: {type: String},
+    paymentStatusDetail: {type: String},
+    paymentType: { type: String, enum: ["qr", "point", "online"], required: true},
+    paidAt:{type: Date},
     externalReference: {type: String},
     storeId: {type: String},
     storeName: {type: String},
     cashierId: {type: String},
     boxId: {type: String},
-    paymentType: { type: String, enum: ["qr", "point", "online"], required: true},
     products: [{
         productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true},
         productQuantity: { type: Number, required: true},

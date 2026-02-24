@@ -61,6 +61,7 @@ const NewSell = () => {
   }, []);
 
   useEffect(() => {
+    console.log(storeId, ' ', cashierId)
     const loadSellData = async () => {
       if (!cashierId) return;
 
@@ -185,6 +186,7 @@ const NewSell = () => {
   };
 
 const newSellFunc = async () => {
+  console.log(sellData)
   if (!sellData || !cashierId) return;
 
   // Solo enviamos los campos necesarios
@@ -412,6 +414,7 @@ const newSellFunc = async () => {
                   {/* Botón Finalizar Venta */}
                   <button
                     onClick={() => newSellFunc()}
+                    type='button'
                     className="w-full mt-4 flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-green-500/20"
                   >
                     <ShoppingCart size={20} />
