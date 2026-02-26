@@ -24,7 +24,8 @@ type UserBody = {
 }
 
 export const getAllCashiersController = async (req: Request, res: Response) => {
-    const cashiers = await UserModel.find({userRole: 'cashier'})
+    const {storeId} = req.params
+    const cashiers = await UserModel.find({storeId:storeId})
     return res.status(200).json(cashiers)
 }
 
@@ -42,11 +43,7 @@ export const registerCashierController = async (
   } = req.body
 
   let imageUrl: string | undefined
-  console.log( storeId,
-    fullName,
-    username,
-    userpassword,
-    userDni)
+  
   // 📸 Imagen (se mantiene igual)
   if (req.file) {
     imageUrl = await uploadFileToCloudinaryAtmFolder(req.file)

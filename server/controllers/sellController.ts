@@ -363,6 +363,8 @@ export const sellProductController = async (req, res) => {
       boxId
     } = req.body
 
+    let paymentType;
+
     if (!products?.length) {
       return res.status(400).json({ message: "No products provided" })
     }
@@ -389,11 +391,11 @@ export const sellProductController = async (req, res) => {
 
       const subTotalPrice =
         productFromDB.productPrice * p.productQuantity
-
+      
       const totalDiscount =
         (paymentDiscounts[p.paymentType] || 0) +
         (p.productDiscount || 0)
-
+      
       let discountedSubTotal =
         subTotalPrice - (subTotalPrice * totalDiscount) / 100
 
@@ -407,7 +409,6 @@ export const sellProductController = async (req, res) => {
         }
       }
 
-    
 
       const totalEarned = Math.max(
         0,
@@ -415,8 +416,8 @@ export const sellProductController = async (req, res) => {
       )
       
       storeSubTotal += discountedSubTotal
-      storeTaxes += productFromDB.productTaxe
-      console.log('product taxes: ', productFromDB.productTaxe)
+      storeTaxes += (subTotalPrice * productFromDB.productTaxe) / 100
+      console.log('product taxes: ', storeTaxes)
       calculatedProducts.push({
         productId: productFromDB._id,
         productName: productFromDB.productName,
@@ -427,18 +428,40 @@ export const sellProductController = async (req, res) => {
         totalEarned,
         totalDiscount
       })
+      paymentType = p.paymentType
     }
-    
+    console.log(paymentType)
     const totalToPay = calculatedProducts.reduce(
       (acc, p) => acc + p.subTotalEarned,
       0
-    )
-
+    ) + storeTaxes
+    
     const externalReference = uuidv4()
 
     // =========================
     // 1️ Crear orden en tu DB (PENDING)
     // =========================
+
+     if(paymentType === 'efectivo'){
+      console.log('entro en el efectivo')
+      Promise.all([
+         await orderModel.create({
+            paymentType: "efective",
+            storeId,
+            storeName,
+            cashierId,
+            boxId,
+            products: calculatedProducts,
+            storeSubTotal,
+            storeTaxes,
+            totalToPay,
+        }),
+
+        await boxesModel.updateOne({_id: boxId}, {$inc:{totalMoneyInBox: totalToPay}})
+      ])
+      return res.status(200).json(1)
+    }
+
     const order = await orderModel.create({
       externalReference,
       storeId,
@@ -497,7 +520,7 @@ export const sellProductController = async (req, res) => {
       console.log("MP ERROR FULL:", data)
       throw new Error(data.message || "Error creating MP order")
     }
-
+    
     // Guardar id de MP
     order.orderId = data.id
     await order.save()

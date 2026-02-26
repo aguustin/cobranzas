@@ -52,9 +52,7 @@ export const StoreResume = () => {
       getStoreByIdContext({storeId})
   }, [])
   
-  console.log('storeData: ', storeData)
-  console.log('sellsData: ', sellsData)
-  console.log('boxData: ', boxData) 
+  
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',

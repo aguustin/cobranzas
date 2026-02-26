@@ -43,9 +43,9 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
     const loginCashierContext = async (userData) => {
         const res = await loginCashierRequest(userData)
         if(res.data.token.length > 0){
-            sessionStorage.setItem('cashier', JSON.stringify(res.data));
-            sessionStorage.setItem('cashierId', res.data.user._id);
-            const cachierData = JSON.parse(sessionStorage.getItem('cashier'))
+            localStorage.setItem('cashier', JSON.stringify(res.data));
+            localStorage.setItem('cashierId', res.data.user._id);
+            const cachierData = JSON.parse(localStorage.getItem('cashier'))
             setCashierSession(cachierData)
             navigate(`/store_resume/${res.data.user.storeId}`)
         }

@@ -8,7 +8,7 @@ const OrderSchema = new mongoose.Schema<OrderI>({
     paymentId: {type: String},
     paymentMethod: {type: String},
     paymentStatusDetail: {type: String},
-    paymentType: { type: String, enum: ["qr", "point", "online"], required: true},
+    paymentType: { type: String, enum: ["qr", "point", "online", "efective"], required: true},
     paidAt:{type: Date},
     externalReference: {type: String},
     storeId: {type: String},

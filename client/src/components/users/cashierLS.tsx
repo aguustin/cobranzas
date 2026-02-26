@@ -1,6 +1,6 @@
 import  { useContext, useEffect, useState } from 'react';
-import { User, Lock, LogIn, UserPlus, Upload, Trash2, Clock, CheckCircle, XCircle, CreditCard } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { User, Lock, LogIn, UserPlus, Upload, Trash2, Clock, CheckCircle, XCircle, CreditCard, Settings, Calendar, LogOut } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { loginCashierRequest, registerCashierRequest } from '../../api/cashierRequests';
 import ContextBody from '../../context';
 //import { useNotification } from '../../globalComp';
@@ -324,13 +324,209 @@ const CashierLS = () => {
   );
 }
 
+
+const CashierProfile = () => {
+const { storeId } = useParams<{ storeId: string}>(); 
+const {cashierSession} = useContext(ContextBody)
+   const getRoleLabel = (role) => {
+    const roles = {
+      'cashier': 'Cajero',
+      'manager': 'Gerente',
+      'admin': 'Administrador'
+    };
+    return roles[role] || role;
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-AR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+};
+
+const formatTime = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+const handleLogout = () => {
+    console.log('Cerrando sesión...');
+    // Aquí iría tu lógica de logout
+  };
+
+  return(
+    <>
+     
+    <div className="min-h-screen bg-gray-950 text-gray-100 p-8">
+      <div className="max-w-4xl mx-auto">
+        
+        {/* Header con botón de logout */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Perfil de Cajero</h1>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all"
+          >
+            <LogOut size={20} />
+            Cerrar Sesión
+          </button>
+        </div>
+
+        {/* Tarjeta Principal de Perfil */}
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 rounded-xl overflow-hidden shadow-2xl mb-6">
+          <div className="p-8">
+            
+            {/* Sección Superior - Foto y Datos Básicos */}
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8 pb-8 border-b border-gray-700">
+              
+              {/* Foto de Perfil */}
+              <div className="relative">
+                <div className="w-32 h-32 rounded-full border-4 border-indigo-500 overflow-hidden bg-gray-800">
+                  {cashierSession.user.userPhoto ? (
+                    <img 
+                      src={cashierSession.user.userPhoto} 
+                      alt={cashierSession.user.fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User size={48} className="text-gray-500" />
+                    </div>
+                  )}
+                </div>
+                {/* Badge de Rol */}
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-4 py-1 bg-indigo-600 rounded-full">
+                  <span className="text-white text-xs font-semibold uppercase">
+                    {getRoleLabel(cashierSession.user.userRole)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Información Básica */}
+              <div className="flex-1 text-center md:text-left">
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  {cashierSession.user.fullName}
+                </h2>
+                <p className="text-gray-400 mb-4">
+                  Usuario activo desde {formatDate(cashierSession.user.UserDate)}
+                </p>
+                
+                {/* Badges de Estado */}
+                <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                  <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-semibold">
+                    ● En línea
+                  </span>
+                  <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-semibold">
+                    Sesión Activa
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Grid de Información Detallada */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* DNI */}
+              <div className="bg-gray-800/50 rounded-lg p-5 border border-gray-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-purple-600 rounded-lg">
+                    <CreditCard size={20} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase">DNI</h3>
+                </div>
+                <p className="text-2xl font-bold text-white">
+                  {cashierSession.user.userDni.toLocaleString('es-AR')}
+                </p>
+              </div>
+
+              {/* Fecha de Registro */}
+              <div className="bg-gray-800/50 rounded-lg p-5 border border-gray-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-blue-600 rounded-lg">
+                    <Calendar size={20} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase">Fecha de Registro</h3>
+                </div>
+                <p className="text-xl font-bold text-white">
+                  {formatDate(cashierSession.user.UserDate)}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {formatTime(cashierSession.user.UserDate)} hs
+                </p>
+              </div>
+                {/* Rol */}
+               <div className="bg-gray-800/50 rounded-lg p-5 border border-gray-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-indigo-600 rounded-lg">
+                    <User size={20} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase">Rol</h3>
+                </div>
+                <p className="text-2xl font-bold text-white">
+                  {getRoleLabel(cashierSession.user.userRole)}
+                </p>
+              </div>
+
+              {/* Tiempo en Sesión */}
+              <div className="bg-gray-800/50 rounded-lg p-5 border border-gray-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-green-600 rounded-lg">
+                    <Clock size={20} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase">Tiempo en Sesión</h3>
+                </div>
+                <p className="text-2xl font-bold text-white">
+                  2h 34m
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Última actividad: Hace 5 min
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tarjeta de Acciones Rápidas */}
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 rounded-xl p-6 shadow-xl">
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Settings className="text-indigo-400" size={24} />
+            Acciones Rápidas
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link to={`/boxes_list/${storeId}`} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all text-left"><button>
+              Abrir Caja
+            </button></Link>
+            <Link to={`/new_sell/${storeId}`} className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-all text-left"><button>
+              Nueva Venta
+            </button></Link>
+            <button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all text-left">
+              Ver Historial
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    </>
+  )
+}
+
 // ==================== COMPONENTE PRINCIPAL (para demostración) ====================
 const CashierSystem = () => {
+  const {cashierSession} = useContext(ContextBody)
   const [vista, setVista] = useState('login');
  // const {notifications, showNotification, removeNotification} = useNotification()
   const [message, setMessage] = useState(0)
-
-
+  
+  if (cashierSession && cashierSession.user) {
+    return <CashierProfile />;
+  }
   return (
     <div>
       {/* Menú de navegación para demo */}
@@ -363,7 +559,7 @@ const CashierSystem = () => {
       {message > 0  && showNotification({ type: 'success',
                 message: '✓ Usuario registrado exitosamente',
                 position: 'top-right'})
-                 }
+      }
     </div>
   );
 }

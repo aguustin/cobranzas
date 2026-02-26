@@ -6,7 +6,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage })
 const router = Router()
 
-router.get('/get_all_cashiers', getAllCashiersController)
+router.get('/get__store_cashiers/:storeId', getAllCashiersController)
 
 router.post('/register_cashier', upload.single('userPhoto'), registerCashierController)
 

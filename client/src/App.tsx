@@ -21,6 +21,8 @@ import BoxesList from './components/boxes/boxesSystem'
 import CreateBox from './components/boxes/createBox'
 import Boxes from './components/boxes/boxesSystem'
 import NewSell from './components/sell/newSell'
+import GetCashiers from './components/users/getCashier'
+
 
 function AppRoutes() {
   const location = useLocation();
@@ -38,7 +40,7 @@ function AppRoutes() {
               <Routes>
                 <Route path='/signIn' element={<RegisterManager/>}/>
                 <Route path='/login' element={<LoginManager/>}/>
-                <Route path='/' element={<Dashboard/>}/>
+                <Route path='/' element={<Lists/>}/>
                 <Route path='/products/:storeId' element={<Products/>}/>
                 <Route path='/edit_product/:storeId/:productId' element={<EditProductForm/>}></Route>
                 <Route path='/statistics_product/:storeId/:productId' element={<ProductStatistics/>}></Route>
@@ -51,6 +53,7 @@ function AppRoutes() {
                 <Route path='/boxes_list/:storeId' element={<Boxes/>}/>
                 <Route path='/new_sell/:storeId' element={<NewSell/>}/>
                 <Route path='/stock/:storeId' element={<Stocki/>}/>
+                <Route path='/get__store_cashiers/:storeId' element={<GetCashiers/>}/>
               </Routes>
             </main>
           </div>

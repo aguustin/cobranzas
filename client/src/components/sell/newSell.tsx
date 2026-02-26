@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Search, Plus, Trash2, ShoppingCart, DollarSign, Package, CreditCard, Banknote } from 'lucide-react';
 import { listProductsRequest } from '../../api/productRequests';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { getSellDataRequest, newSellRequest } from '../../api/sellRequests';
 import axios from 'axios';
+import ContextBody from '../../context';
 
 const NewSell = () => {
 
@@ -23,7 +24,7 @@ const NewSell = () => {
     storeName: string;
     boxId: string;
   }
-
+  const {cashierSession} = useContext(ContextBody)
   const [sellData, setSellData] = useState<SellData | null>(null);
   // Estado para productos disponibles (simulando base de datos)
   const { storeId } = useParams<{ storeId: string}>();
@@ -45,8 +46,13 @@ const NewSell = () => {
 
   // Estado para los productos agregados al carrito
   const [products, setProducts] = useState<ProductFrontend[]>([]);
+  const navigation = useNavigate()
+
   // Simular obtención de productos de la base de datos
   useEffect(() => {
+    if(cashierSession?.length <= 0){
+      navigation(`/cashiers_form/${storeId}`)
+    }
     const storedCashierId = sessionStorage.getItem('cashierId');
     setCashierId(storedCashierId);
   }, []);
@@ -79,12 +85,12 @@ const NewSell = () => {
   // Calcular valores automáticamente cuando se selecciona un producto o cambia cantidad
   const calculateValues = (product, quantity) => {
   if (!product) return;
-
+    
   const priceAfterDiscount = product.productPrice * (1 - product.productDiscount / 100);
   const subTotalEarned = priceAfterDiscount * quantity;
   const productTaxe = subTotalEarned * (product.productTaxe / 100);
   const totalEarned = subTotalEarned + productTaxe;
-
+  console.log('form data: ', totalEarned)
   return {
     productId: product._id,
     productName: product.productName,
@@ -105,7 +111,7 @@ const NewSell = () => {
         ...prev,
         ...calculatedValues
       }));
-      console.log('form data: ', formData)
+      
     } else {
       // Limpiar si no hay producto seleccionado
       setFormData(prev => ({
@@ -177,7 +183,7 @@ const NewSell = () => {
     productTaxe: products.reduce((sum, p) => sum + p.productTaxe, 0),
     total: products.reduce((sum, p) => sum + p.totalEarned, 0)
   };
-
+  
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
@@ -186,7 +192,7 @@ const NewSell = () => {
   };
 
 const newSellFunc = async () => {
-  console.log(sellData)
+  
   if (!sellData || !cashierId) return;
 
   // Solo enviamos los campos necesarios
@@ -196,7 +202,7 @@ const newSellFunc = async () => {
     paymentType: p.paymentType,
     productDiscount: p.productDiscount
   }));
-
+  
   try {
     const res = await axios.post('http://localhost:4000/new_sell', {
       products: productsToSend,
@@ -204,7 +210,7 @@ const newSellFunc = async () => {
       giftMount,
       storeName: sellData.storeName,
       cashierId,
-      boxId: sellData.boxId
+      boxId: sellData.boxId,
     });
 
     console.log("Venta realizada:", res.data);
