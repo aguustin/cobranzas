@@ -8,7 +8,7 @@ import { Plus, Store, MapPin, Edit, Eye, TrendingUp } from 'lucide-react';
 const Lists = () => {
 
     const {session, stores, listStoresFunc} = useContext(ContextBody)
-    const [hideCreateStore, setHideCreateStore] = useState<boolean>(false)
+    const [hideCreateStoreForm, setHideCreateStoreForm] = useState<boolean>(false)
 
     useEffect(() => {
         console.log(stores)
@@ -24,18 +24,20 @@ const Lists = () => {
     }).format(amount);
   };
 
-  if (hideCreateStore) {
+  if (hideCreateStoreForm) {
     return (
       <div className="min-h-screen bg-gray-950 text-gray-100 p-8">
         <div className="max-w-7xl mx-auto">
           <button 
-            onClick={() => setHideCreateStore(false)}
+            onClick={() => setHideCreateStoreForm(false)}
             className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600/50 hover:bg-indigo-700/50 text-white rounded-lg font-medium transition-all mb-6"
           >
             ← Volver a Lista
           </button>
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-            <p className="text-gray-400">Aquí iría el componente CreateStore</p>
+              
+                  <CreateStore setHideCreateStoreForm={setHideCreateStoreForm} />
+              
           </div>
         </div>
       </div>
@@ -58,14 +60,14 @@ const Lists = () => {
 
           <div className="flex items-center gap-4">
             {/* Contador de Tiendas */}
-            <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/30 rounded-xl px-6 py-4 text-center min-w-[140px]">
-              <p className="text-blue-400 text-sm font-medium mb-1">Total Tiendas</p>
-              <p className="text-3xl font-bold text-white">{stores.length}</p>
+            <div className="flex items-center bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/30 rounded-xl px-6 py-3 text-center min-w-[140px]">
+              <p className="text-blue-400 text-sm font-medium ">Total Tiendas: </p>
+              <p className="text-xl font-bold text-white ml-1">{stores.length}</p>
             </div>
 
             {/* Botón Crear Tienda */}
             <button 
-              onClick={() => setHideCreateStore(true)}
+              onClick={() => setHideCreateStoreForm(true)}
               className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20 hover:scale-[1.02]"
             >
               <Plus size={20} />
@@ -161,7 +163,7 @@ const Lists = () => {
             <h3 className="text-2xl font-bold text-gray-300 mb-2">No hay tiendas registradas</h3>
             <p className="text-gray-500 mb-6">Comienza creando tu primera tienda</p>
             <button 
-              onClick={() => setHideCreateStore(true)}
+              onClick={() => setHideCreateStoreForm(true)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20"
             >
               <Plus size={20} />

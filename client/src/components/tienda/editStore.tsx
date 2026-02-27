@@ -21,7 +21,6 @@ type TaxName = 'IVA' | 'IIBB' | 'TASA_MUNICIPAL' | 'GANANCIAS' | 'OTROS'
 
 const EditStoreForm = () => {
   const { storeId } = useParams<{ storeId: string}>();
-
   const [storeImgFile, setStoreImgFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>()
   const [taxes, setTaxes] = useState<StoreTax[]>([])
@@ -112,7 +111,7 @@ const EditStoreForm = () => {
           </div>
           {/* Botón Volver */}
           <div className="mb-6">
-            <button 
+            <button onClick={() => window.history.back()}
               className="flex items-center mt-1 gap-2 px-4 py-2.5 bg-indigo-600/50 hover:bg-indigo-700/50 text-white rounded-lg font-medium transition-all cursor-pointer"
             >
               <ChevronLeft size={20} />

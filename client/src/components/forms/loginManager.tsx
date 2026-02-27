@@ -20,6 +20,7 @@ const LoginManager = () => {
         
           if(res.data.manager){
             await localStorage.setItem('manager', JSON.stringify(res.data.manager))
+            await localStorage.setItem('token', res.data.token)
             window.location.href = "/";
             return;
         }

@@ -58,14 +58,18 @@ export const loginManagerController = async (req: Request<{}, {}, ManagerBody>, 
         const validPassword: boolean = await bcrypt.compare(password, getManager.password || '')
         if(validPassword){
           
-            const secretKey: jwt.Secret = process.env.JWT_SECRET_KEY!
-             const options: jwt.SignOptions = {
-                expiresIn: 60 * 60 * 24,
-                algorithm: "HS256"
-            }
-           jwt.sign({email}, secretKey, options)
+           const secretKey: jwt.Secret = process.env.JWT_SECRET_KEY!
+
+           const token = jwt.sign(
+              { email: getManager.email },
+              secretKey,
+              {
+                expiresIn: "1d",
+                algorithm: "HS256",
+              }
+            );
            
-           return res.status(200).json({manager: getManager})
+           return res.status(200).json({manager: getManager, token})
         }
         return res.status(401).json({message: 'Las credenciales ingresadas son incorrectas!'}) 
     }
@@ -96,7 +100,7 @@ export const loginManagerController = async (req: Request<{}, {}, ManagerBody>, 
 }) */
 
 export const changePlanController = async (req: Request<{}, {}, ManagerBody>, res:Response): Promise<Response> => {
-    const {cardToken, subscriptionPlan} = req.body
+    const { cardToken, subscriptionPlan } = req.body
     const token = req.headers.authorization?.split(" ")[1];
 
     if(!token){
@@ -110,10 +114,10 @@ export const changePlanController = async (req: Request<{}, {}, ManagerBody>, re
     if(!manager) {return res.status(404).json({message: 'No se encuentra el usuario'})}
 
     const plan_prices: Record<number, number> = {
-        1: 1000,
-        2: 2500,
-        3: 5000,
-        4: 8000
+        0: 0,
+        1: 20000,
+        2: 50000,
+        3: 100000
     };
 
     const amount:number = plan_prices[subscriptionPlan]

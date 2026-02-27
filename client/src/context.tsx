@@ -28,6 +28,7 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
         getSession()
     }, [])
     
+    
     const listStoresFunc = async (sessionId) => {
         const res = await listStoresRequest(sessionId)
         setStores(res.data)

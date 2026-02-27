@@ -2,12 +2,10 @@ import { BrowserRouter, matchPath, Route, Routes, useLocation } from 'react-rout
 import './App.css'
 import Nav from './components/nav/nav'
 import Sidebar from './components/sidebar/sidebar'
-import Dashboard from './components/admin/dashboard'
 import Products from './components/products/products'
 import Finances from './components/tienda/finances'
-import Sells from './components/tienda/sells'
 import Lists from './components/tienda/list'
-import Stocki from './components/tienda/stock'
+
 import LoginManager from './components/forms/loginManager'
 import RegisterManager from './components/forms/registerManager'
 import { ContextBodyProvider } from './context'
@@ -17,11 +15,12 @@ import StoreStatistics from './components/tienda/storeStatistics'
 import EditProductForm from './components/products/editProduct'
 import ProductStatistics from './components/products/productStatistics'
 import CashierSystem from './components/users/cashierLS'
-import BoxesList from './components/boxes/boxesSystem'
-import CreateBox from './components/boxes/createBox'
 import Boxes from './components/boxes/boxesSystem'
 import NewSell from './components/sell/newSell'
 import GetCashiers from './components/users/getCashier'
+import Stocki from './components/tienda/stock'
+import ChoosePlan from './components/manager/choosePlan'
+import CheckoutForm from './components/checkout/checkout'
 
 
 function AppRoutes() {
@@ -38,9 +37,9 @@ function AppRoutes() {
             {!shouldHideNav && <Sidebar/>}
             <main className="content">
               <Routes>
+                <Route path='/' element={<Lists/>}/>
                 <Route path='/signIn' element={<RegisterManager/>}/>
                 <Route path='/login' element={<LoginManager/>}/>
-                <Route path='/' element={<Lists/>}/>
                 <Route path='/products/:storeId' element={<Products/>}/>
                 <Route path='/edit_product/:storeId/:productId' element={<EditProductForm/>}></Route>
                 <Route path='/statistics_product/:storeId/:productId' element={<ProductStatistics/>}></Route>
@@ -54,6 +53,8 @@ function AppRoutes() {
                 <Route path='/new_sell/:storeId' element={<NewSell/>}/>
                 <Route path='/stock/:storeId' element={<Stocki/>}/>
                 <Route path='/get__store_cashiers/:storeId' element={<GetCashiers/>}/>
+                <Route path='/subscription/:session' element={<ChoosePlan/>}/>
+                <Route path='/checkout/:planId/:billingCycle' element={<CheckoutForm/>}/>
               </Routes>
             </main>
           </div>

@@ -8,7 +8,7 @@ const Nav = () => {
     const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
     const [dropdownTienda, setDropdownTienda] = useState<boolean>(false)
     const [dropdownAdmin, setDropdownAdmin] = useState<boolean>(false)
-    
+    console.log(session)
 
     return(
         <>
@@ -58,15 +58,15 @@ const Nav = () => {
                                     <ChevronDown size={16} className={`transition-transform ${dropdownAdmin ? 'rotate-180' : ''}`} />
                                 </button> }
                                 {dropdownAdmin && (
-                                    <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+                                    <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden z-1">
                                     <Link to="/" className="block px-4 py-3 hover:bg-gray-750 transition-colors text-sm">
                                         Mi Perfil
                                     </Link>
                                     <Link to="/" className="block px-4 py-3 hover:bg-gray-750 transition-colors text-sm">
                                         Configuración de Cuenta
                                     </Link>
-                                    <Link to="/" className="block px-4 py-3 hover:bg-gray-750 transition-colors text-sm">
-                                        Seguridad
+                                    <Link to={`/subscription/${session._id}`} className="block px-4 py-3 hover:bg-gray-750 transition-colors text-sm">
+                                        Cambiar Plan
                                     </Link>
                                     <hr className="border-gray-700" />
                                     <Link to="/" className="block px-4 py-3 hover:bg-gray-750 transition-colors text-sm text-red-400">
