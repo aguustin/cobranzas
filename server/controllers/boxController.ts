@@ -104,7 +104,7 @@ export const openCloseBoxController = async (
     const { boxId, isOpen, cashierId } = req.body
     
     const boxData = await boxesModel.findById(boxId)
-
+    
     if (!boxData) return res.status(404).json({ message: 'Caja no encontrada' })
  
         await boxesModel.findByIdAndUpdate(

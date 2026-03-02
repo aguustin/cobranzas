@@ -8,7 +8,7 @@ const BoxesList = () => {
   const {storeId} = useParams<{ storeId: string}>();
   const [boxesData, setBoxesData] = useState([])
   
-  let cashierId = sessionStorage.getItem('cashierId');
+  let cashierId = localStorage.getItem('cashierId');
 
   useEffect(() => {
    // espera hasta que haya sesión

@@ -9,6 +9,7 @@ import sellRoutes from "./routes/sellRoutes.ts"
 import storeRoutes from "./routes/storeRoutes.ts"
 import userRoutes from "./routes/userRoutes.ts"
 import productRoutes from "./routes/productRoutes.ts"
+import clientRoutes from "./routes/clientRoutes.ts"
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use(sellRoutes)
 app.use(storeRoutes)
 app.use(userRoutes)
 app.use(productRoutes)
+app.use(clientRoutes)
 
 //listening
 app.listen(port, () => {

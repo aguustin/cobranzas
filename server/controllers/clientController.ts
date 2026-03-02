@@ -20,15 +20,15 @@ export const registerClientController = async (req: Request<{}, {}, ClientBody>,
 }
 
 export const subsClientController = async (req: Request, res: Response) => {
-    const {phone} = req.body
-
-    const checkState = await clientModel.findOne({phone: phone})
+    const {clientId} = req.body
+    console.log(clientId)
+    const checkState = await clientModel.findOne({_id: clientId})
 
     if(checkState){
         checkState.active 
         ? 
         await clientModel.updateOne(
-            {phone: phone},
+            {_id: clientId},
             {
                 $set:{
                     active: false
@@ -37,24 +37,24 @@ export const subsClientController = async (req: Request, res: Response) => {
         )
         :
           await clientModel.updateOne(
-            {phone: phone},
+            {_id: clientId},
             {
                 $set:{
                     active: true
                 }
             }
         )
-        return res.status(200).json({message: "Estado del producto cambiado"})
+        return res.status(200).json({message: "Estado del cliente cambiado"})
     }
 
-    return res.status(201).json({message: "No se encontro el producto"})
+    return res.status(201).json({message: "No se encontro el cliente"})
 }
 
 
 export const getClientsController = async (req: Request<{}, {}, {storeId: string}>, res: Response): Promise<Response> => {
-    const {storeId} = req.body
+    const {storeId} = req.params
+    console.log('asdsadas: ', storeId)
+    const clients = await clientModel.find({storeId: storeId})
 
-    const clients = await clientModel.findOne({storeId: storeId})
-
-    return res.status(200).json({clients})
+    return res.status(200).json(clients)
 }

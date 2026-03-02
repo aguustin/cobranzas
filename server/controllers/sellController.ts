@@ -9,6 +9,7 @@ import storeModel from "../models/storeModel.ts";
 import { Payment, Preference } from "mercadopago";
 import QRCode from "qrcode";
 import orderModel from "../models/orderModel.ts";
+import clientModel from "../models/clientModel.ts";
 
 
 const preference = new Preference(mp);
@@ -19,13 +20,11 @@ export const getSellDataController = async (
 ) => {
   try {
     const { storeId, cashierId } = req.query;
-    console.log(storeId, ' ', cashierId)
+  
     const [store, box] = await Promise.all([
       storeModel.findById(storeId).select("storeName"),
       boxesModel.findOne({ storeId, cashierId, isOpen: true })
     ]);
-
-    console.log('store: ', store, ' ', 'box: ', box)
 
     return res.status(200).json({
       storeName: store.storeName,
@@ -360,7 +359,10 @@ export const sellProductController = async (req, res) => {
       giftMount = 0,
       storeName,
       cashierId,
-      boxId
+      boxId,
+      clientName,
+      phone,
+      email
     } = req.body
 
     let paymentType;
@@ -417,7 +419,7 @@ export const sellProductController = async (req, res) => {
       
       storeSubTotal += discountedSubTotal
       storeTaxes += (subTotalPrice * productFromDB.productTaxe) / 100
-      console.log('product taxes: ', storeTaxes)
+      
       calculatedProducts.push({
         productId: productFromDB._id,
         productName: productFromDB.productName,
@@ -430,20 +432,60 @@ export const sellProductController = async (req, res) => {
       })
       paymentType = p.paymentType
     }
-    console.log(paymentType)
+    
     const totalToPay = calculatedProducts.reduce(
       (acc, p) => acc + p.subTotalEarned,
       0
     ) + storeTaxes
+
+    const clientQuantity = calculatedProducts.reduce(
+      (acc, c) => acc + c.productQuantity, 
+      0
+    )
     
     const externalReference = uuidv4()
 
     // =========================
     // 1️ Crear orden en tu DB (PENDING)
     // =========================
+    const client = await clientModel.findOne({ 
+      storeId: storeId,
+      phone: phone // o email si es único
+    });
 
+    if(!client){
+      console.log('no se encontro ', clientName, ' ', phone, ' ', email)
+       await clientModel.create({
+        storeId,
+        clientName:clientName,
+        phone:Number(phone),
+        email:email,
+        clientProductQuantity: clientQuantity,
+        totalSpent: totalToPay,
+        giftCard: 0,
+        active: true
+      });
+    }else{
+      console.log('se encontro')
+      await clientModel.updateOne(
+        {
+          storeId: storeId,
+          phone: phone,
+        },
+        {
+          $inc: {
+            clientProductQuantity: clientQuantity,
+            totalSpent: totalToPay
+          },
+          $set: {
+            clientName: clientName,
+            email: email
+          }
+        }
+      );
+    }
      if(paymentType === 'efectivo'){
-      console.log('entro en el efectivo')
+      
       Promise.all([
          await orderModel.create({
             paymentType: "efective",
@@ -480,7 +522,7 @@ export const sellProductController = async (req, res) => {
     // 2 Crear orden QR en Mercado Pago
     // =========================
 
-    console.log(process.env.MP_USER_ID, ' ', storeId, ' ', boxId, 'total to pay: ', totalToPay)
+   
     const response = await fetch(
       `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${process.env.MP_USER_ID}/pos/SUC001POS001/qrs`,
       {

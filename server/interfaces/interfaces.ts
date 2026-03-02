@@ -67,9 +67,11 @@ export interface ClientProductsI{
 export interface ClientI{
     storeId: string;
     clientName?:string;
-    phone?:Date;
+    phone?:number;
     email?:string;
     clientProducts?: ClientProductsI[];
+    clientProductQuantity:number,
+    totalSpent:number,
     giftCard?:number;
     active: boolean;
 }

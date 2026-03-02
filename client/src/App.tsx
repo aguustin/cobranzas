@@ -14,13 +14,14 @@ import StoreResume from './components/tienda/storeResume'
 import StoreStatistics from './components/tienda/storeStatistics'
 import EditProductForm from './components/products/editProduct'
 import ProductStatistics from './components/products/productStatistics'
-import CashierSystem from './components/users/cashierLS'
+import CashierSystem from './components/cashiers/cashierLS'
 import Boxes from './components/boxes/boxesSystem'
 import NewSell from './components/sell/newSell'
-import GetCashiers from './components/users/getCashier'
+import GetCashiers from './components/cashiers/getCashier'
 import Stocki from './components/tienda/stock'
 import ChoosePlan from './components/manager/choosePlan'
 import CheckoutForm from './components/checkout/checkout'
+import ClientList from './components/clients/clientsList'
 
 
 function AppRoutes() {
@@ -55,6 +56,7 @@ function AppRoutes() {
                 <Route path='/get__store_cashiers/:storeId' element={<GetCashiers/>}/>
                 <Route path='/subscription/:session' element={<ChoosePlan/>}/>
                 <Route path='/checkout/:planId/:billingCycle' element={<CheckoutForm/>}/>
+                <Route path='/clients_list/:storeId' element={<ClientList/>} />
               </Routes>
             </main>
           </div>

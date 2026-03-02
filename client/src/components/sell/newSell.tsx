@@ -43,8 +43,10 @@ const NewSell = () => {
     productDiscount: 0,
     productQuantity: 1
   });
-
-  // Estado para los productos agregados al carrito
+  const [clientName, setClientName] = useState<string | null>()
+  const [phone, setPhone] = useState<string | null>()
+  const [email, setEmail] = useState<string | null>()
+  const [showClientForm, setShowClientForm] = useState(false)
   const [products, setProducts] = useState<ProductFrontend[]>([]);
   const navigation = useNavigate()
 
@@ -53,7 +55,7 @@ const NewSell = () => {
     if(cashierSession?.length <= 0){
       navigation(`/cashiers_form/${storeId}`)
     }
-    const storedCashierId = sessionStorage.getItem('cashierId');
+    const storedCashierId = localStorage.getItem('cashierId');
     setCashierId(storedCashierId);
   }, []);
 
@@ -67,12 +69,10 @@ const NewSell = () => {
   }, []);
 
   useEffect(() => {
-    console.log(storeId, ' ', cashierId)
     const loadSellData = async () => {
       if (!cashierId) return;
-
       const res = await getSellDataRequest(storeId, cashierId);
-
+      console.log(res.data)
       setSellData({
         storeName: res.data.storeName,
         boxId: res.data.boxId
@@ -192,7 +192,7 @@ const NewSell = () => {
   };
 
 const newSellFunc = async () => {
-  
+  console.log(sellData, ' ', cashierId, ' ', storeId)
   if (!sellData || !cashierId) return;
 
   // Solo enviamos los campos necesarios
@@ -211,6 +211,9 @@ const newSellFunc = async () => {
       storeName: sellData.storeName,
       cashierId,
       boxId: sellData.boxId,
+      clientName: clientName,
+      phone: phone,
+      email: email
     });
 
     console.log("Venta realizada:", res.data);
@@ -336,16 +339,68 @@ const newSellFunc = async () => {
                     </select>
                   </div>
                 </div>
+                {showClientForm &&
+                <>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-400 mb-2">
+                    Nombre Completo
+                  </label>
+                  <input
+                      type="text"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                      placeholder="Ej: John Doe"
+                    />
+                </div>
+                <div>
+
+                  <label className="block text-sm font-semibold text-gray-400 mb-2">
+                    Numero de contacto
+                  </label>
+                  <input
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                      placeholder="Ej: John Doe"
+                    />
+                </div>
+                    <div>
+
+                      <label className="block text-sm font-semibold text-gray-400 mb-2">
+                        Email
+                      </label>
+                      <input
+                          type="text"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-11 pr-4 py-3 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                          placeholder="Ej: John Doe"
+                        />
+                    </div>
+                </>
+                
+                }
               </div>
 
               {/* Botón Agregar */}
+              <div className='flex justify-between'>
+                <button
+                  onClick={() => setShowClientForm(!showClientForm)}
+                  className="w-auto flex items-center justify-center cursor-pointer gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-green-500/20 hover:scale-[1.02]"
+                >
+                <Plus size={20} />
+                Agregar Cliente
+              </button>
               <button
                 onClick={addProduct}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20 hover:scale-[1.02]"
-              >
+                className="w-auto flex items-center justify-center cursor-pointer gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20 hover:scale-[1.02]"
+                >
                 <Plus size={20} />
                 Agregar Producto
               </button>
+                </div>
             </div>
           </div>
 
@@ -419,7 +474,7 @@ const newSellFunc = async () => {
 
                   {/* Botón Finalizar Venta */}
                   <button
-                    onClick={() => newSellFunc()}
+                    onClick={newSellFunc}
                     type='button'
                     className="w-full mt-4 flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-green-500/20"
                   >
