@@ -17,14 +17,13 @@ type BoxBody = {
     maxTransactionAmount: number
 }
 
-/*export const getBoxController = async (req: Request<{}, {}, {}>, res:Response): Promise<Response> => {
+export const getBoxController = async (req: Request<{}, {}, {}>, res:Response): Promise<Response> => {
     const {storeId, cashierId} = req.body;
 
     const box = await boxesModel.findOne({storeId: storeId, cashierId: cashierId ? new mongoose.Types.ObjectId(cashierId) : null, isOpen: true})
-        .populate('cashierId', 'fullName userPhoto')
 
     return res.status(200).json(box)
-}*/
+}
 
 export const getBoxesListController = async (req: Request<{}, {}, { storeId: string, cashierId: string }>, res: Response) => {
     const { storeId } = req.body;
@@ -113,7 +112,9 @@ export const openCloseBoxController = async (
             $set: {
                 isOpen,
                 cashierId: isOpen ? cashierId : null,
-                initialCash: isOpen ? boxData.totalMoneyInBox : boxData.initialCash
+                initialCash: isOpen ? boxData.totalMoneyInBox : boxData.initialCash,
+                boxOpenDate: isOpen ? new Date() : boxData.boxOpenDate,
+                boxCloseDate: !isOpen ? new Date() : boxData.boxCloseDate
             }
         }
         )
@@ -122,6 +123,27 @@ export const openCloseBoxController = async (
         message: isOpen ? 'Se abrió la caja' : 'Se cerró la caja'
     })
 }
+
+
+export const cashCountController = async (req: Request, res: Response) => {
+  const {storeId, cashierId} = req.body
+  const box = await boxesModel.findOne({storeId: storeId, cashierId: cashierId})
+  if(box){
+    await boxesModel.updateOne(
+      {_id:box._id},
+      {
+        $set:{
+          cashSales: 0,
+          initialCash: box.totalMoneyInBox
+        }
+      }
+    )
+    return res.status(200).json(1)
+  }
+
+  return res.status(201).json(2)
+}
+
 
 export const deleteAllBoxesController = async (req: Request, res: Response): Promise<Response> => {
     await boxesModel.deleteMany({})

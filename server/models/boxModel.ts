@@ -9,8 +9,12 @@ const BoxSchema = new mongoose.Schema<BoxI>({
     location:{type: String},
     paymentTerminal:{type: String},
     isOpen:{type:Boolean},
-    boxDate:{type:Date},
+    boxOpenDate:{type:Date},
+    boxCloseDate:{type: Date},
     initialCash:{type: Number, default: 0},
+    cashSales:{type: Number, default: 0},
+    withdrawals:{type: Number, default: 0},
+    expectedCash:{type: Number, default: 0},
     totalMoneyInBox:{type: Number, default: 0},
     maxDiscount:{type: Number},
     printer:{type: String},
@@ -23,7 +27,7 @@ const BoxSchema = new mongoose.Schema<BoxI>({
 
 
 
-BoxSchema.index({ storeId: 1, boxDate: 1 });
+BoxSchema.index({ storeId: 1, boxOpenDate: 1 });
 BoxSchema.index({ storeId: 1});
 
 const boxesModel = mongoose.model("boxesModel", BoxSchema)

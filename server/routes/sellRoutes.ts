@@ -1,5 +1,5 @@
 import {Router} from "express"
-import { getAllStatisticsController, getDayDataController, getSellDataController, sellProductController, webhookHandlerController } from "../controllers/sellController.ts"
+import { getAllStatisticsController, getDayDataController, getSellDataController, getSellsController, sellProductController, webhookHandlerController } from "../controllers/sellController.ts"
 
 const router = Router()
 
@@ -12,5 +12,7 @@ router.get("/sell_data", getSellDataController);
 router.post('/new_sell', sellProductController)
 
 router.post("/webhook/mercadopago", webhookHandlerController)
+
+router.get('/get_sells', getSellsController)
 
 export default router

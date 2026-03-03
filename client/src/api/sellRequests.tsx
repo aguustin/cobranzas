@@ -7,3 +7,4 @@ export const getSellDataRequest = (storeId: string, cashierId: string) =>
     params: { storeId, cashierId }
   });
 
+export const getSellsRequest = () => axios.get('http://localhost:4000/get_sells')

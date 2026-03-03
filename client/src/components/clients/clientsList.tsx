@@ -289,12 +289,12 @@ const ClientList = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex gap-2">
-                        <button
+                        {/*<button
                           onClick={() => handleEdit(client._id)}
                           className="p-2 text-indigo-400 hover:bg-indigo-500/20 rounded-lg transition-all"
                         >
                           <Edit size={18} />
-                        </button>
+                        </button>*/}
                         <button
                           onClick={() => handleSub(client._id)}
                           className={`p-2  ${

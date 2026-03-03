@@ -44,7 +44,7 @@ export const StoreStatistics = () => {
           start: params.start,
           end: params.end
          } ;
-         console.log(storeId, ' ', query)
+         console.log('agarra aca: ', storeId, ' ', query)
          const res = await getAllStatisticsRequest(query);
          setSellsData(res.data);
      };
@@ -188,8 +188,8 @@ export const StoreStatistics = () => {
                 <DollarSign size={24} />
               </div>
             </div>
-            <h3 className="text-gray-400 text-sm mb-1">Total Vendido</h3>
-            <p className="text-3xl font-bold text-white">{formatCurrency(sellsData?.productos)}</p>
+            <h3 className="text-gray-400 text-sm mb-1">Total de Ventas</h3>
+            <p className="text-3xl font-bold text-white">{sellsData?.[0]?.productos}</p>
           </div>
 
           {/* Cantidad de Ventas */}
@@ -205,7 +205,7 @@ export const StoreStatistics = () => {
               </div>
             </div>
             <h3 className="text-gray-400 text-sm mb-1">Cantidad de Ventas</h3>
-            <p className="text-3xl font-bold text-white">{sellsData?.cantidad}</p>
+            <p className="text-3xl font-bold text-white">{sellsData?.[0]?.cantidad}</p>
           </div>
 
           {/* Subtotal Ganado */}
@@ -221,37 +221,37 @@ export const StoreStatistics = () => {
               </div>
             </div>
             <h3 className="text-gray-400 text-sm mb-1">Subtotal Ganado</h3>
-            <p className="text-3xl font-bold text-white">{formatCurrency(sellsData?.ventas)}</p>
+            <p className="text-3xl font-bold text-white">{formatCurrency(sellsData?.[0]?.ventas)}</p>
           </div>
 
           {/* Diferencia de Caja */}
           <div 
             onClick={() => toggleMetric('diferencia')}
             className={`cursor-pointer bg-gradient-to-br ${
-              sellsData?.diferencia === 0 
+              sellsData?.[0]?.totalMoneyInBox === 0 
                 ? 'from-gray-900/40 to-gray-800/20' 
-                : sellsData?.diferencia > 0 
+                : sellsData?.[0]?.totalMoneyInBox > 0 
                   ? 'from-green-900/40 to-green-800/20' 
                   : 'from-red-900/40 to-red-800/20'
             } border rounded-xl p-6 shadow-xl transition-all ${
-              selectedMetrics.diferencia 
-                ? sellsData?.diferencia === 0 
+              selectedMetrics.totalMoneyInBox 
+                ? sellsData?.[0]?.totalMoneyInBox === 0 
                   ? 'border-gray-500 ring-2 ring-gray-500/50' 
-                  : sellsData?.diferencia > 0 
+                  : sellsData?.[0]?.totalMoneyInBox > 0 
                     ? 'border-green-500 ring-2 ring-green-500/50' 
                     : 'border-red-500 ring-2 ring-red-500/50'
-                : sellsData?.diferencia === 0 
+                : sellsData?.[0]?.totalMoneyInBox === 0 
                   ? 'border-gray-700/30' 
-                  : sellsData?.diferencia > 0 
+                  : sellsData?.[0]?.totalMoneyInBox > 0 
                     ? 'border-green-700/30' 
                     : 'border-red-700/30'
             }`}
           >
             <div className="flex items-center justify-between mb-4">
               <div className={`p-3 rounded-xl ${
-                sellsData?.diferencia === 0 
+                sellsData?.totalMoneyInBox === 0 
                   ? 'bg-gray-600' 
-                  : sellsData?.diferencia > 0 
+                  : sellsData?.totalMoneyInBox > 0 
                     ? 'bg-green-600' 
                     : 'bg-red-600'
               }`}>
@@ -260,15 +260,15 @@ export const StoreStatistics = () => {
             </div>
             <h3 className="text-gray-400 text-sm mb-1">Diferencia de Caja</h3>
             <p className={`text-3xl font-bold ${
-              sellsData?.diferencia === 0 
+              sellsData?.totalMoneyInBox === 0 
                 ? 'text-white' 
-                : sellsData?.diferencia > 0 
+                : sellsData?.totalMoneyInBox > 0 
                   ? 'text-green-400' 
                   : 'text-red-400'
             }`}>
               {sellsData?.diferencia === 0 
                 ? 'Sin diferencia' 
-                : formatCurrency(Math.abs(sellsData?.diferencia))}
+                : formatCurrency(Math.abs(sellsData?.totalMoneyInBox))}
             </p>
           </div>
         </div>
@@ -309,7 +309,7 @@ export const StoreStatistics = () => {
                   borderRadius: '8px',
                   color: '#f3f4f6'
                 }}
-                formatter={(value) => formatCurrency(value)}
+                formatter={(value) =>formatCurrency(value)}
               />
               <Legend />
               {selectedMetrics.ventas && (

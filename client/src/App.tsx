@@ -22,6 +22,8 @@ import Stocki from './components/tienda/stock'
 import ChoosePlan from './components/manager/choosePlan'
 import CheckoutForm from './components/checkout/checkout'
 import ClientList from './components/clients/clientsList'
+import CashCount from './components/boxes/cashCount'
+import BoxMovement from './components/boxes/boxesMovements'
 
 
 function AppRoutes() {
@@ -57,6 +59,8 @@ function AppRoutes() {
                 <Route path='/subscription/:session' element={<ChoosePlan/>}/>
                 <Route path='/checkout/:planId/:billingCycle' element={<CheckoutForm/>}/>
                 <Route path='/clients_list/:storeId' element={<ClientList/>} />
+                <Route path='/cash_count/:storeId' element={<CashCount/>} />
+                <Route path='/boxes_movements/:boxId' element={<BoxMovement/>}/>
               </Routes>
             </main>
           </div>

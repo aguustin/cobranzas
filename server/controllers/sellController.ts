@@ -499,7 +499,7 @@ export const sellProductController = async (req, res) => {
             totalToPay,
         }),
 
-        await boxesModel.updateOne({_id: boxId}, {$inc:{totalMoneyInBox: totalToPay}})
+        await boxesModel.updateOne({_id: boxId}, {$inc:{cashSales: totalToPay, totalMoneyInBox: totalToPay}})
       ])
       return res.status(200).json(1)
     }
@@ -683,7 +683,7 @@ export const getDayDataController = async (req:Request<{storeId: string}>, res:R
     })(),
       boxesModel.findOne({
         storeId: storeId,
-        /*boxDate: {
+        /*boxOpenDate: {
           $gte: hoyInicio,
           $lte: hoyFin
         }*/
@@ -765,8 +765,8 @@ const getGroupByFilter = (filter: StatsFilter) => {
 
     case 'mes':
       return {
-        _id: { $week: "$sellDate" },
-        label: { $concat: ["Sem ", { $toString: { $week: "$sellDate" } }] }
+        _id: { $isoWeek: "$sellDate" },
+        label: { $concat: ["Sem ", { $toString: { $isoWeek: "$sellDate" } }] }
       };
 
     case 'anio':
@@ -800,7 +800,7 @@ export const getAllStatisticsController = async (req:Request<{}, {}, {query: Que
   
   let startDate: Date;
   let endDate: Date;
-
+  console.log( storeId, ' ', filter, ' ', ' ', start, ' ', end)
   if (start && end) {
     startDate = new Date(start);
     endDate = new Date(end);
@@ -816,15 +816,19 @@ export const getAllStatisticsController = async (req:Request<{}, {}, {query: Que
   }
 
   const groupConfig = getGroupByFilter(filter);
+  const matchStage = {
+    storeId
+  };
+
+  if (start && end) {
+    matchStage.sellDate = { $gte: startDate, $lte: endDate };
+}
 
   const [sells, efectivo] = await Promise.all([
     // 🔹 SELLS
     sellModel.aggregate([
       {
-        $match: {
-          storeId,
-          sellDate: { $gte: start, $lte: end }
-        }
+        $match: matchStage
       },
       {
         $group: {
@@ -853,7 +857,7 @@ export const getAllStatisticsController = async (req:Request<{}, {}, {query: Que
       {
         $match: {
           storeId,
-          boxDate: { $gte: start, $lte: end }
+          boxOpenDate: { $gte: start, $lte: end }
         }
       },
       {
@@ -866,7 +870,7 @@ export const getAllStatisticsController = async (req:Request<{}, {}, {query: Que
   ]);
 
   const efectivoTotal = efectivo[0]?.efectivo || 0;
-
+  console.log(sells, '   ', efectivoTotal)
   return res.json(
     sells.map(s => ({
       ...s,
@@ -875,6 +879,12 @@ export const getAllStatisticsController = async (req:Request<{}, {}, {query: Que
   );
 };
 
+
+export const getSellsController = async (req: Request, res: Response) => {
+    const resp = await sellModel.find({})
+    console.log(resp)
+    return res.send(resp)
+}
 /** // =========================
     // Actualizar stock en paralelo
     // =========================

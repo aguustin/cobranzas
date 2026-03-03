@@ -110,8 +110,12 @@ export interface BoxI{
     location:string;
     paymentTerminal:string;
     isOpen:boolean;
-    boxDate: Date;
+    boxOpenDate: Date;
+    boxCloseDate: Date;
     initialCash: number;
+    cashSales: number;
+    withdrawals: number;
+    expectedCash: number;
     totalMoneyInBox: number;
     maxDiscount:number;
     printer:string;
