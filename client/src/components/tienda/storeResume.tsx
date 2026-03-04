@@ -15,6 +15,7 @@ import ContextBody from '../../context';
     }
 
     type BoxType = {
+      _id: string,
       isOpen: boolean,
       boxDifferenceMoney: number
     }
@@ -332,7 +333,7 @@ export const StoreResume = () => {
         {/* Acciones Rápidas */}
         <div className="flex flex-wrap gap-4">
           <Link to={`/new_sell/${storeId}`}>
-            <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all ">
+            <button className="px-6 py-3 bg-green-600/50 hover:bg-green-700 text-white rounded-lg font-semibold transition-all ">
               Nueva Venta
             </button>
           </Link>
@@ -341,6 +342,9 @@ export const StoreResume = () => {
           </button>
           <Link to={`/cash_count/${storeId}`}><button className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all">
             Arqueo de Caja
+          </button></Link>
+          <Link to={`/boxes_movements/${boxData?._id}`}><button className="px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all">
+            Retiros Caja
           </button></Link>
           <button className="px-6 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-lg font-semibold transition-all">
             <Link to={`/products/${storeId}`}>Lista de Productos</Link>

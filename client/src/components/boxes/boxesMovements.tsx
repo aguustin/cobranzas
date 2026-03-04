@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, TrendingUp, TrendingDown, Clock, FileText, X, Save, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, TrendingUp, TrendingDown, Clock, FileText } from 'lucide-react';
 
 const BoxMovement = () => {
   const [showModal, setShowModal] = useState(false);
@@ -152,7 +152,7 @@ const BoxMovement = () => {
             </button>
           </div>
 
-          {/* Tarjetas de Resumen */}
+          {/* Tarjetas de Resumen 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 border border-green-700/30 rounded-xl p-5">
               <div className="flex items-center gap-3 mb-2">
@@ -185,7 +185,7 @@ const BoxMovement = () => {
                 {formatCurrency(balance)}
               </p>
             </div>
-          </div>
+          </div>*/}
         </div>
 
         {/* Historial de Movimientos */}
@@ -263,12 +263,12 @@ const BoxMovement = () => {
         </div>
       </div>
 
-      {/* Modal de Nuevo Movimiento */}
-      {showModal && (
+
+      {/*showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl">
             
-            {/* Header del Modal */}
+            
             <div className="flex items-center justify-between p-6 border-b border-gray-700">
               <h3 className="text-2xl font-bold">Nuevo Movimiento</h3>
               <button
@@ -283,10 +283,10 @@ const BoxMovement = () => {
               </button>
             </div>
 
-            {/* Contenido del Modal */}
+           
             <div className="p-6 space-y-5">
               
-              {/* Tipo de Movimiento */}
+              
               <div>
                 <label className="block text-sm font-semibold text-gray-400 mb-3">
                   Tipo de Movimiento
@@ -319,7 +319,7 @@ const BoxMovement = () => {
                 </div>
               </div>
 
-              {/* Monto */}
+              
               <div>
                 <label className="block text-sm font-semibold text-gray-400 mb-2">
                   Monto <span className="text-red-400">*</span>
@@ -349,7 +349,7 @@ const BoxMovement = () => {
                 )}
               </div>
 
-              {/* Motivo */}
+            
               <div>
                 <label className="block text-sm font-semibold text-gray-400 mb-2">
                   Motivo <span className="text-red-400">*</span>
@@ -374,7 +374,7 @@ const BoxMovement = () => {
                 )}
               </div>
 
-              {/* Advertencia */}
+              
               <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                 <div className="flex items-start gap-3">
                   <AlertCircle size={20} className="text-yellow-400 flex-shrink-0 mt-0.5" />
@@ -390,7 +390,7 @@ const BoxMovement = () => {
               </div>
             </div>
 
-            {/* Footer del Modal */}
+            
             <div className="flex gap-3 p-6 border-t border-gray-700">
               <button
                 onClick={() => {
@@ -412,9 +412,9 @@ const BoxMovement = () => {
             </div>
           </div>
         </div>
-      )}
+      )*/}
     </div>
   );
 }
 
-export default BoxMovement;
+export default BoxMovement

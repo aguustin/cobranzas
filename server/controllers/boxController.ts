@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import boxesModel from "../models/boxModel.ts";
 import mongoose from "mongoose";
+import boxesMovementModel from "../models/boxMovementModel.ts";
 
 type BoxBody = {
     storeId: string,
@@ -144,6 +145,48 @@ export const cashCountController = async (req: Request, res: Response) => {
   return res.status(201).json(2)
 }
 
+
+export const boxMovementController = async (req: Request, res: Response) => {
+  const {amount, boxId, cashierId, cashierName, movementType, reason, storeId} = req.body
+  try {
+  
+  await boxesMovementModel.create(
+    { boxId: boxId,
+      storeId: storeId,
+      cashierId: cashierId,
+      cashierName: cashierName,
+      type: movementType,
+      reason: reason,
+      amount: amount
+    }
+  )
+  
+  const movementFieldMap: Record<string, string> = {
+    withdrawal: "withdrawals",
+    deposit: "deposit"
+  }
+  
+  const field = movementFieldMap[movementType] 
+  
+  await boxesModel.updateOne(
+    { _id: boxId },
+    { $inc: { [field]: amount } },
+  )
+  
+    return res.status(200).json({ message: "Movement registered" })
+
+  } catch (error) {
+    return res.status(500).json({ message: "Error registering movement" })
+  }
+}
+
+export const getMovementsController = async (req: Request, res :Response): Promise<Response> => {
+  const {storeId} = req.params
+
+  const getMovements = await boxesMovementModel.find({storeId: storeId})
+
+  return res.status(200).json(getMovements)
+}
 
 export const deleteAllBoxesController = async (req: Request, res: Response): Promise<Response> => {
     await boxesModel.deleteMany({})

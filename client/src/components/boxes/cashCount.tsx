@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { DollarSign, Calculator, AlertCircle, CheckCircle, XCircle, TrendingUp, TrendingDown, Printer, Save } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { DollarSign, Calculator, AlertCircle, CheckCircle, X, Circle, TrendingUp, TrendingDown, Printer, Save, Plus } from 'lucide-react';
 import { useParams } from 'react-router-dom';
-import { getBoxInfoRequest } from '../../api/boxRequests';
+import { boxMovementRequest, getBoxInfoRequest } from '../../api/boxRequests';
 
 const CashCount = () => {
     const { storeId } = useParams<{ storeId: string}>();
     const [boxData, setBoxData] = useState([])
     const [cashierData, setCashierData] = useState()
+    const [showModal, setShowModal] = useState(false);        
+    const [errors, setErrors] = useState({});
+        
 
     useEffect(() => {
         getBoxInfoFunc()
@@ -18,6 +21,15 @@ const CashCount = () => {
         setBoxData(res.data)
     }
     
+  const [formData, setFormData] = useState({
+        storeId: storeId,
+        boxId: '',
+        cashierId: '',
+        cashierName: '',
+        movementType: 'withdrawals',
+        amount: '',
+        reason: ''
+  });
 
   const [denominations, setDenominations] = useState({
     bill_20000: 0,
@@ -107,6 +119,7 @@ const CashCount = () => {
     console.log('Arqueo completado:', arqueoData);
     setIsCompleted(true);
   };
+  
 
   const handlePrint = () => {
     window.print();
@@ -136,6 +149,38 @@ const CashCount = () => {
 
   const billetes = billsAndCoins.filter(item => item.type === 'Billetes');
   const monedas = billsAndCoins.filter(item => item.type === 'Monedas');
+
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+      // Limpiar error del campo cuando se edita
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
+    };
+
+   const handleSubmit = async () => {
+     const data = {
+       ...formData,
+       boxId: boxData._id,
+       cashierId: localStorage.getItem('cashierId'),
+       cashierName: cashierData?.user?.fullName
+      }
+      console.log('movimiento: ', data)
+
+    await boxMovementRequest(data)
+    // Resetear formulario
+    /*setFormData({
+      type: 'withdrawals',
+      amount: '',
+      reason: ''
+    });*/
+    
+    setShowModal(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 p-4 md:p-8">
@@ -350,6 +395,13 @@ const CashCount = () => {
                     <Save size={20} />
                     Completar Arqueo
                   </button>
+                      <button
+              onClick={() => setShowModal(true)}
+              className="w-full! flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-green-500/20 md:w-auto"
+            >
+              <Plus size={20} />
+              Nuevo Movimiento
+            </button>
                   <button
                     onClick={resetForm}
                     className="w-full px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg font-semibold transition-all border border-gray-700"
@@ -393,6 +445,155 @@ const CashCount = () => {
             </div>
           </div>
         </div>
+            {/* Modal de Nuevo Movimiento */}
+              {showModal && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl">
+                    
+                    {/* Header del Modal */}
+                    <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                      <h3 className="text-2xl font-bold">Nuevo Movimiento</h3>
+                      <button
+                        onClick={() => {
+                          setShowModal(false);
+                          setFormData({ movementType: 'withdrawals', amount: '', reason: '' });
+                          setErrors({});
+                        }}
+                        className="p-2 hover:bg-gray-700 rounded-lg transition-all"
+                      >
+                        <X size={24} className="text-gray-400" />
+                      </button>
+                    </div>
+        
+                    {/* Contenido del Modal */}
+                    <div className="p-6 space-y-5">
+                      
+                      {/* Tipo de Movimiento */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-400 mb-3">
+                          Tipo de Movimiento
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, movementType: 'withdrawals' }))}
+                            className={`p-4 rounded-lg border-2 transition-all ${
+                              formData.movementType === 'withdrawals'
+                                ? 'bg-red-500/20 border-red-500 text-red-400'
+                                : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+                            }`}
+                          >
+                            <TrendingDown size={24} className="mx-auto mb-2" />
+                            <span className="font-semibold">Retiro</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, movementType: 'deposit' }))}
+                            className={`p-4 rounded-lg border-2 transition-all ${
+                              formData.movementType === 'deposit'
+                                ? 'bg-green-500/20 border-green-500 text-green-400'
+                                : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+                            }`}
+                          >
+                            <TrendingUp size={24} className="mx-auto mb-2" />
+                            <span className="font-semibold">Ingreso</span>
+                          </button>
+                        </div>
+                      </div>
+        
+                      {/* Monto */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-400 mb-2">
+                          Monto <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">$</span>
+                          <input
+                            type="number"
+                            name="amount"
+                            value={formData.amount}
+                            onChange={handleChange}
+                            placeholder="0.00"
+                            step="0.01"
+                            min="0"
+                            className={`w-full bg-gray-800 border rounded-lg pl-8 pr-4 py-3 text-gray-100 focus:outline-none transition-all ${
+                              errors.amount 
+                                ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                                : 'border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
+                            }`}
+                          />
+                        </div>
+                        {errors.amount && (
+                          <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                            <AlertCircle size={14} />
+                            {errors.amount}
+                          </p>
+                        )}
+                      </div>
+        
+                      {/* Motivo */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-400 mb-2">
+                          Motivo <span className="text-red-400">*</span>
+                        </label>
+                        <textarea
+                          name="reason"
+                          value={formData.reason}
+                          onChange={handleChange}
+                          rows={4}
+                          placeholder="Describe el motivo del movimiento..."
+                          className={`w-full bg-gray-800 border rounded-lg px-4 py-3 text-gray-100 focus:outline-none transition-all resize-none ${
+                            errors.reason 
+                              ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                              : 'border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
+                          }`}
+                        />
+                        {errors.reason && (
+                          <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                            <AlertCircle size={14} />
+                            {errors.reason}
+                          </p>
+                        )}
+                      </div>
+        
+                      {/* Advertencia */}
+                      <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle size={20} className="text-yellow-400 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm text-yellow-400 font-semibold mb-1">
+                              Este movimiento se registrará de forma permanente
+                            </p>
+                            <p className="text-xs text-yellow-400/80">
+                              Verifica que los datos sean correctos antes de confirmar
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Footer del Modal */}
+                    <div className="flex gap-3 p-6 border-t border-gray-700">
+                      <button
+                        onClick={() => {
+                          setShowModal(false);
+                          setFormData({ movementType: 'withdrawals', amount: '', reason: '' });
+                          setErrors({});
+                        }}
+                        className="flex-1 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg font-semibold transition-all border border-gray-700"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleSubmit}
+                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20"
+                      >
+                        <Save size={20} />
+                        Confirmar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
       </div>
     </div>
   );

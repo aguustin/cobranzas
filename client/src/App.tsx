@@ -60,7 +60,7 @@ function AppRoutes() {
                 <Route path='/checkout/:planId/:billingCycle' element={<CheckoutForm/>}/>
                 <Route path='/clients_list/:storeId' element={<ClientList/>} />
                 <Route path='/cash_count/:storeId' element={<CashCount/>} />
-                <Route path='/boxes_movements/:boxId' element={<BoxMovement/>}/>
+                <Route path='/boxes_movements/:storeId' element={<BoxMovement/>}/>
               </Routes>
             </main>
           </div>
