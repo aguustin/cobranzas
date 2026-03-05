@@ -9,7 +9,7 @@ const CashCount = () => {
     const [cashierData, setCashierData] = useState()
     const [showModal, setShowModal] = useState(false);        
     const [errors, setErrors] = useState({});
-        
+    const [negativeAmount, setNegativeAmount] = useState()
 
     useEffect(() => {
         getBoxInfoFunc()
@@ -20,7 +20,7 @@ const CashCount = () => {
         const res = await getBoxInfoRequest({storeId, cashierId})
         setBoxData(res.data)
     }
-    
+  
   const [formData, setFormData] = useState({
         storeId: storeId,
         boxId: '',
@@ -30,7 +30,7 @@ const CashCount = () => {
         amount: '',
         reason: ''
   });
-
+ 
   const [denominations, setDenominations] = useState({
     bill_20000: 0,
     bill_10000: 0,
@@ -84,7 +84,7 @@ const CashCount = () => {
   }, 0);
 
   // Diferencia
-  const difference = countedTotal - boxData.expectedCash;
+  const difference = countedTotal - boxData.withdrawals;
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-AR', {
@@ -169,9 +169,13 @@ const CashCount = () => {
        cashierId: localStorage.getItem('cashierId'),
        cashierName: cashierData?.user?.fullName
       }
-      console.log('movimiento: ', data)
 
     await boxMovementRequest(data)
+     if (formData.movementType === "withdrawals") {
+    setNegativeAmount(
+      (boxData.withdrawals || 0) + Number(formData.amount)
+    );
+  }
     // Resetear formulario
     /*setFormData({
       type: 'withdrawals',
@@ -237,7 +241,7 @@ const CashCount = () => {
                 </div>
                 <div className="flex justify-between items-center p-3 bg-red-500/10 rounded-lg border border-red-500/20">
                   <span className="text-gray-300">Retiros:</span>
-                  <span className="text-red-400 font-bold">- {formatCurrency(boxData.withdrawals)}</span>
+                  <span className="text-red-400 font-bold">- {formatCurrency(negativeAmount ?? boxData.withdrawals)}</span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-purple-500/10 rounded-lg border-2 border-purple-500/30">
                   <span className="text-white font-semibold text-lg">Efectivo Esperado:</span>

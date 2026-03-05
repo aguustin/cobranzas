@@ -17,6 +17,7 @@ const OrderSchema = new mongoose.Schema<OrderI>({
     boxId: {type: String},
     products: [{
         productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true},
+        productName: {type: String},
         productQuantity: { type: Number, required: true},
         productPrice: { type: Number, required: true},
         productTaxe: { type: Number, required: true},
@@ -30,7 +31,9 @@ const OrderSchema = new mongoose.Schema<OrderI>({
     status: {type: String, enum: ["pending", "approved", "rejected", "cancelled"], default:"pending"}
 })
 
-OrderSchema.index({ orderId: 1});
+OrderSchema.index({ storeId: 1, paidAt: 1 })
+OrderSchema.index({ cashierId: 1 })
+OrderSchema.index({ "products.productId": 1 })
 
 const orderModel = mongoose.model("orderModel", OrderSchema)
 

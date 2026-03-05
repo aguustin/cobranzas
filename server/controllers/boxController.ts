@@ -148,10 +148,12 @@ export const cashCountController = async (req: Request, res: Response) => {
 
 export const boxMovementController = async (req: Request, res: Response) => {
   const {amount, boxId, cashierId, cashierName, movementType, reason, storeId} = req.body
+  console.log('llegoooo: ', amount, ' ', boxId, ' ', cashierId, ' ', cashierName, ' ', movementType, ' ', reason, ' ', storeId)
   try {
   
   await boxesMovementModel.create(
-    { boxId: boxId,
+    { 
+      boxId: boxId,
       storeId: storeId,
       cashierId: cashierId,
       cashierName: cashierName,
@@ -162,10 +164,10 @@ export const boxMovementController = async (req: Request, res: Response) => {
   )
   
   const movementFieldMap: Record<string, string> = {
-    withdrawal: "withdrawals",
-    deposit: "deposit"
+    withdrawals: "withdrawals",
+    deposit: "cashSales"
   }
-  
+  console.log(movementFieldMap[movementType])
   const field = movementFieldMap[movementType] 
   
   await boxesModel.updateOne(

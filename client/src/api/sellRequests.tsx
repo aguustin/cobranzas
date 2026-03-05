@@ -8,3 +8,13 @@ export const getSellDataRequest = (storeId: string, cashierId: string) =>
   });
 
 export const getSellsRequest = () => axios.get('http://localhost:4000/get_sells')
+
+
+export const getReportRequest = async (storeId: string, reportType: string, filters: any) => {
+  return await axios.post(`http://localhost:4000/reports/${storeId}`, {
+    reportType,
+    filters
+  });
+};
+
+export const getOrdersRequest = ({storeId}) => axios.post('http://localhost:4000/orders', {storeId})

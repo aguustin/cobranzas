@@ -80,6 +80,7 @@ export interface ClientI{
 export interface SellI{
     storeId: string;
     sproductId:string;
+    productName:string;
     sellDate:Date;
     sellUnityPrice:number;
     sellQuantity:number;

@@ -10,6 +10,7 @@ import { Payment, Preference } from "mercadopago";
 import QRCode from "qrcode";
 import orderModel from "../models/orderModel.ts";
 import clientModel from "../models/clientModel.ts";
+import mongoose from "mongoose";
 
 
 const preference = new Preference(mp);
@@ -489,6 +490,7 @@ export const sellProductController = async (req, res) => {
       Promise.all([
          await orderModel.create({
             paymentType: "efective",
+            paidAt: Date.now(),
             storeId,
             storeName,
             cashierId,
@@ -506,6 +508,7 @@ export const sellProductController = async (req, res) => {
 
     const order = await orderModel.create({
       externalReference,
+      paidAt: Date.now(),
       storeId,
       storeName,
       cashierId,
@@ -885,6 +888,287 @@ export const getSellsController = async (req: Request, res: Response) => {
     console.log(resp)
     return res.send(resp)
 }
+
+const buildMatchFilter = (storeId, filters) => {
+
+  const match = {
+    storeId: storeId,
+    status: "pending"  //debe filtar los datos aprobados, para eso cambiar el status a "approved"
+  }
+
+  if (filters.startDate && filters.endDate) {
+
+    const start = new Date(filters.startDate)
+    const end = new Date(filters.endDate)
+
+    end.setHours(23,59,59,999)
+
+    match.paidAt = {
+      $gte: start,
+      $lte: end
+    }
+
+  }
+
+  if (filters.cashierId) {
+    match.cashierId = filters.cashierId
+  }
+console.log('cashierId: ', filters.cashierId)
+  if (filters.productId) {
+    match["products.productId"] = filters.productId
+  }
+console.log('productId: ', filters.productId)
+  return match
+}
+
+
+const getSalesByDate = async (storeId, filters) => {
+
+  const match = buildMatchFilter(storeId, filters)
+
+  return await orderModel.aggregate([
+
+    { $match: match },
+
+    { $unwind: "$products" },
+
+    {
+      $lookup: {
+        from: "usermodels",
+        let: { cashierId: { $toObjectId: "$cashierId" } },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$_id", "$$cashierId"] }
+            }
+          }
+        ],
+        as: "cashier"
+      }
+    },
+
+    {
+      $unwind: {
+        path: "$cashier",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+
+    {
+      $project: {
+
+        date: "$paidAt",
+
+        productName: "$products.productName",
+
+        quantity: "$products.productQuantity",
+
+        price: "$products.productPrice",
+
+        subTotal: "$products.subTotalEarned",
+
+        total: "$products.totalEarned",
+
+        paymentType: 1,
+
+        cashierName: "$cashier.fullName",
+
+       // cashierPhoto: "$cashier.userPhoto"
+
+      }
+    }
+
+  ])
+
+}
+
+
+const getSalesByProduct = async (storeId, filters) => {
+
+  const match = buildMatchFilter(storeId, filters)
+
+  return await orderModel.aggregate([
+
+    { $match: match },
+
+    { $unwind: "$products" },
+
+    {
+      $group: {
+
+        _id: "$products.productId",
+
+        totalSold: { $sum: "$products.productQuantity" },
+
+        totalRevenue: { $sum: "$products.totalEarned" },
+
+        avgPrice: { $avg: "$products.productPrice" }
+
+      }
+    },
+
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "product"
+      }
+    },
+
+    { $unwind: "$product" },
+
+    {
+      $project: {
+
+        productName: "$product.name",
+
+        totalSold: 1,
+
+        totalRevenue: 1,
+
+        avgPrice: 1
+
+      }
+    }
+
+  ])
+
+}
+
+
+const getSalesByCashier = async (storeId, filters) => {
+
+  const match = buildMatchFilter(storeId, filters)
+
+  return await orderModel.aggregate([
+
+    { $match: match },
+
+    {
+      $group: {
+
+        _id: "$cashierId",
+
+        totalOrders: { $sum: 1 },
+
+        totalRevenue: { $sum: "$totalToPay" }
+
+      }
+    },
+
+    {
+      $lookup: {
+
+        from: "usermodels",
+
+        localField: "_id",
+
+        foreignField: "_id",
+
+        as: "cashier"
+
+      }
+    },
+
+    { $unwind: "$cashier" },
+
+    {
+      $project: {
+
+        cashierName: "$cashier.fullName",
+
+        //cashierPhoto: "$cashier.userPhoto",
+
+        totalOrders: 1,
+
+        totalRevenue: 1
+
+      }
+    }
+
+  ])
+
+}
+
+
+const getNetProfit = async (storeId, filters) => {
+
+  const match = buildMatchFilter(storeId, filters)
+
+  return await orderModel.aggregate([
+
+    { $match: match },
+
+    {
+      $group: {
+
+        _id: null,
+
+        subTotal: { $sum: "$storeSubTotal" },
+
+        taxes: { $sum: "$storeTaxes" },
+
+        totalRevenue: { $sum: "$totalToPay" },
+
+        orders: { $sum: 1 }
+
+      }
+    }
+
+  ])
+
+}
+
+
+export const getReportController = async (req, res) => {
+
+  try {
+
+    const { storeId } = req.params
+    const { reportType, filters } = req.body
+    console.log('storeid: ', storeId, ' ', 'report type: ', reportType, ' ', 'filters: ', filters)
+    let result
+
+    switch (reportType) {
+
+      case "sales_by_date":
+        result = await getSalesByDate(storeId, filters)
+        break
+
+      case "sales_by_product":
+        result = await getSalesByProduct(storeId, filters)
+        break
+
+      case "sales_by_cashier":
+        result = await getSalesByCashier(storeId, filters)
+        break
+
+      case "net_profit":
+        result = await getNetProfit(storeId, filters)
+        break
+
+      default:
+        return res.status(400).json({message:"Invalid report type"})
+    }
+    console.log(result)
+    res.json(result)
+
+  } catch (error) {
+
+    console.error(error)
+    res.status(500).json({message:"Error generating report"})
+  }
+}
+
+
+export const getOrdersController = async (req:Request, res:Response): Promise<Response> => {
+  const {storeId} = req.body
+  const orders = await orderModel.find({storeId: storeId})
+  return res.status(200).json(orders)
+}
+
+
 /** // =========================
     // Actualizar stock en paralelo
     // =========================

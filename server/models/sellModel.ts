@@ -4,6 +4,7 @@ import { SellI } from "../interfaces/interfaces.ts";
 const SellSchema = new mongoose.Schema<SellI>({
     storeId:{type:String},
     sproductId:{type: String},
+    productName:{type: String},
     sellDate:{type: Date},
     sellUnityPrice:{type: Number, default: 0},
     sellQuantity:{type: Number, default: 0},
