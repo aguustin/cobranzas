@@ -222,11 +222,11 @@ const CashCount = () => {
                 </div>
                 <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
                   <p className="text-gray-400 text-sm mb-1">Apertura</p>
-                  <p className="text-white font-semibold">{formatDateTime(boxData.boxOpenDate)}</p>
+                  <p className="text-white font-semibold">{boxData.boxOpenDate ? formatDateTime(boxData.boxOpenDate) : 'No hay caja abierta'}</p>
                 </div>
                 <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                  <p className="text-gray-400 text-sm mb-1">Cierre</p>
-                  <p className="text-white font-semibold">{formatDateTime(boxData.boxCloseDate)}</p>
+                  <p className="text-gray-400 text-sm mb-1">Cierre de arqueo</p>
+                  <p className="text-white font-semibold">{boxData.boxCloseDate ? formatDateTime(new Date()) : 'No hay caja abierta'}</p>
                 </div>
               </div>
 

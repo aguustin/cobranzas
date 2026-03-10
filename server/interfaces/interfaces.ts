@@ -105,7 +105,8 @@ export interface GiftCardI{
 
 export interface BoxI{
     storeId: string;
-    cashierId?: string | null 
+    cashierId?: string | null;
+    mpPosId: string; 
     boxName:string;
     boxNumber:string;
     location:string;

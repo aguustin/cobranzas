@@ -79,12 +79,12 @@ const ExportReports = () => {
     if (!selectedReport) return false;
 
     // Validar campos requeridos según el tipo de reporte
-    for (const field of selectedReport.fields) {
+   /* for (const field of selectedReport.fields) {
       if (!filters[field]) {
         alert(`Por favor completa el campo: ${field}`);
         return false;
       }
-    }
+    }*/
 
     // Validar que la fecha de inicio sea menor a la de fin
     if (filters.startDate && filters.endDate) {

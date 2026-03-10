@@ -1,6 +1,6 @@
 import { BrowserRouter, matchPath, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
-import Nav from './components/nav/nav'
+//import Nav from './components/nav/nav'
 import Sidebar from './components/sidebar/sidebar'
 import Products from './components/products/products'
 import Finances from './components/tienda/finances'
@@ -36,7 +36,7 @@ function AppRoutes() {
     return (
     <>
         <ContextBodyProvider>
-          {!shouldHideNav && <Nav/>}
+          {/*!shouldHideNav && <Nav/>*/}
           <div className="app-layout">
             {!shouldHideNav && <Sidebar/>}
             <main className="content">

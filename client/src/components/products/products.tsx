@@ -28,7 +28,7 @@ const Products = () => {
             }
             getProductsFilterFunc()
         }, [filter])
-   console.log(products)
+  
             return(
                 <>
                 {!hideCreateProduct && 
@@ -83,12 +83,12 @@ const Products = () => {
                                     </span>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <span className={` py-1 rounded-full text-sm font-medium ${''
-                                      /*producto.stock < 20
+                                    <span className={` py-1 px-1 rounded-full text-sm font-medium ${
+                                      pr.productQuantity < 50
                                         ? 'bg-red-500/10 text-red-400'
-                                        : 'bg-blue-500/10 text-blue-400'*/
+                                        : 'bg-blue-500/10 text-blue-400'
                                     }`}>
-                                      {pr.productQuantity} disponibles
+                                     {pr.productQuantity} disponibles 
                                     </span>
                                   </td>
                                   <td className="px-6 py-4">
@@ -96,9 +96,9 @@ const Products = () => {
                                       <Link to={`/edit_product/${storeId}/${pr._id}`} className="cursor-pointer px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
                                         Editar
                                       </Link>
-                                      <Link to={`/statistics_product/${storeId}/${pr._id}`} className="cursor-pointer px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-750 text-gray-300 rounded-lg transition-colors border border-gray-700">
+                                      {/*<Link to={`/statistics_product/${storeId}/${pr._id}`} className="cursor-pointer px-3 py-1.5 text-sm bg-gray-800 hover:bg-gray-750 text-gray-300 rounded-lg transition-colors border border-gray-700">
                                         Ver
-                                      </Link>
+                                      </Link>*/}
                                     </div>
                                   </td>
                                 </tr>))}

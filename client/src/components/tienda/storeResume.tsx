@@ -17,7 +17,7 @@ import ContextBody from '../../context';
     type BoxType = {
       _id: string,
       isOpen: boolean,
-      boxDifferenceMoney: number
+      withdrawals: number
     }
 
   type DailySellData = {
@@ -53,7 +53,10 @@ export const StoreResume = () => {
       getStoreByIdContext({storeId})
   }, [])
   
-  
+  console.log('tienda: ', storeData)
+  console.log('sells: ', sellsData)
+  console.log('caja: ', boxData)
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
@@ -202,8 +205,8 @@ export const StoreResume = () => {
               <h3 className="text-gray-400 text-sm mb-1">Ventas del Día</h3>
               <p className="text-3xl font-bold text-white mb-2">{formatCurrency(storeData?.storeTotalEarned || 0)}</p>
               <div className="flex items-center gap-2 text-green-400 text-sm">
-                <TrendingUp size={16} />
-                <span>+12.5% vs ayer</span>
+                <TrendingUp className='mt-1' size={16} />
+                {/*<span>+12.5% vs ayer</span>*/}
               </div>
             </div>
 
@@ -262,66 +265,66 @@ export const StoreResume = () => {
               </div>
               <h3 className="text-gray-400 text-sm mb-1">Efectivo en Caja</h3>
               <p className="text-3xl font-bold text-white mb-2">{formatCurrency(boxData?.totalMoneyInBox  || 0)}</p>
-              <div className="flex items-center gap-2 text-yellow-400 text-sm">
-                <span>{((boxData?.totalMoneyInBox / sellsData?.docCount || 0) * 100).toFixed(1)}% del total</span>
-              </div>
+              {/*<div className="flex items-center gap-2 text-yellow-400 text-sm">
+                <span>{((boxData?.totalMoneyInBox / sellsData?.docCount || 0)).toFixed(1)}% del total</span>
+              </div>*/}
             </div>
 
             {/* Diferencia de Caja */}
             <div className={`bg-gradient-to-br ${
-              boxData?.boxDifferenceMoney === 0 
+              boxData?.withdrawals === 0 
                 ? 'from-gray-900/40 to-gray-800/20 border-gray-700/30' 
-                : boxData?.boxDifferenceMoney > 0 
+                : boxData?.withdrawals > 0 
                   ? 'from-green-900/40 to-green-800/20 border-green-700/30' 
                   : 'from-red-900/40 to-red-800/20 border-red-700/30'
             } border rounded-xl p-6 shadow-xl transition-all`}>
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 rounded-xl ${
-                  boxData?.boxDifferenceMoney === 0 
+                  boxData?.withdrawals === 0 
                     ? 'bg-gray-600' 
-                    : boxData?.boxDifferenceMoney > 0 
+                    : boxData?.withdrawals > 0 
                       ? 'bg-green-600' 
                       : 'bg-red-600'
                 }`}>
                   <AlertCircle size={24} />
                 </div>
                 <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                  boxData?.boxDifferenceMoney === 0 
+                  boxData?.withdrawals === 0 
                     ? 'text-gray-400 bg-gray-500/20' 
-                    : boxData?.boxDifferenceMoney > 0 
+                    : boxData?.withdrawals > 0 
                       ? 'text-green-400 bg-green-500/20' 
                       : 'text-red-400 bg-red-500/20'
                 }`}>
-                  {boxData?.boxDifferenceMoney === 0 
+                  {boxData?.withdrawals === 0 
                     ? 'OK' 
-                    : boxData?.boxDifferenceMoney > 0 
+                    : boxData?.withdrawals > 0 
                       ? 'SOBRANTE' 
                       : 'FALTANTE'}
                 </span>
               </div>
               <h3 className="text-gray-400 text-sm mb-1">Diferencia de Caja</h3>
               <p className={`text-3xl font-bold mb-2 ${
-                boxData?.boxDifferenceMoney === 0 
+                boxData?.withdrawals === 0 
                   ? 'text-white' 
-                  : boxData?.boxDifferenceMoney > 0 
+                  : boxData?.withdrawals > 0 
                     ? 'text-green-400' 
                     : 'text-red-400'
               }`}>
-                {boxData?.boxDifferenceMoney === 0 
+                {boxData?.withdrawals === 0 
                   ? '0' 
-                  : formatCurrency(Math.abs(boxData?.boxDifferenceMoney  || 0))}
+                  : formatCurrency(Math.abs(boxData?.withdrawals  || 0))}
               </p>
               <div className={`flex items-center gap-2 text-sm ${
-                boxData?.boxDifferenceMoney === 0 
+                boxData?.withdrawals === 0 
                   ? 'text-gray-400' 
-                  : boxData?.boxDifferenceMoney > 0 
+                  : boxData?.withdrawals > 0 
                     ? 'text-green-400' 
                     : 'text-red-400'
               }`}>
                 <span>
-                  {boxData?.boxDifferenceMoney === 0 
+                  {boxData?.withdrawals === 0 
                     ? 'Caja cuadrada' 
-                    : boxData?.boxDifferenceMoney > 0 
+                    : boxData?.withdrawals > 0 
                       ? 'Hay dinero extra en caja' 
                       : 'Falta dinero en caja'}
                 </span>

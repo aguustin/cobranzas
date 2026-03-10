@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import boxesModel from "../models/boxModel.ts";
 import mongoose from "mongoose";
 import boxesMovementModel from "../models/boxMovementModel.ts";
+import storeModel from "../models/storeModel.ts";
 
 type BoxBody = {
     storeId: string,
@@ -91,10 +92,66 @@ const boxes = await boxesModel.aggregate([
 
 
 export const createBoxController = async (req: Request<{}, {}, {formData:BoxBody}>, res:Response): Promise<Response> => {
-    const {formData} = req.body
+    /*const {formData} = req.body
     console.log(formData)
     await boxesModel.create(formData)
-    return res.status(200).json(1)
+    return res.status(200).json(1)*/
+
+     try {
+
+    const { formData } = req.body
+
+    // 1️⃣ Obtener la store para conseguir mpStoreId
+    const store = await storeModel.findById(formData.storeId)
+
+    if (!store || !store.mpStoreId) {
+      return res.status(400).json({
+        message: "La tienda no tiene configurado mpStoreId"
+      })
+    }
+
+    // 2️⃣ Crear caja en tu DB
+    const box = await boxesModel.create(formData)
+
+    // 3️⃣ Crear POS en Mercado Pago
+    const mpResponse = await fetch(
+      "https://api.mercadopago.com/pos",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: formData.boxName,
+          store_id: store.mpStoreId,
+          external_id: box._id.toString()
+        })
+      }
+    )
+
+    const mpData = await mpResponse.json()
+
+    if (!mpResponse.ok) {
+      console.log("MP ERROR:", mpData)
+      return res.status(500).json({
+        message: "Error creando POS en Mercado Pago"
+      })
+    }
+
+    // 4️⃣ Guardar mpPosId en la caja
+    box.mpPosId = mpData.id
+    await box.save()
+
+    return res.status(200).json(box)
+
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({
+      message: "Error creating box",
+      error: error.message
+    })
+  }
 }
 
 export const openCloseBoxController = async (

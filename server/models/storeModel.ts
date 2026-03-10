@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const StoreSchema = new mongoose.Schema({
+    mpStoreId:{type: String},
     managerId:{type: String},
     storeImg:{type: String},
     storeName:{type: String},

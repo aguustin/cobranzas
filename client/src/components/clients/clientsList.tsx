@@ -117,10 +117,14 @@ const ClientList = () => {
                 Administra tu base de clientes y analiza su comportamiento
               </p>
             </div>
-            <button className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20 w-full md:w-auto">
-              <UserPlus size={20} />
-              Agregar Cliente
-            </button>
+            {
+            /*
+              <button className="flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20 w-full md:w-auto">
+                <UserPlus size={20} />
+                Agregar Cliente
+              </button>
+            */
+            }
           </div>
 
           {/* Tarjetas de Estadísticas */}

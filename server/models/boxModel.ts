@@ -4,6 +4,7 @@ import { BoxI } from "../interfaces/interfaces.ts";
 const BoxSchema = new mongoose.Schema<BoxI>({
     storeId:{type: String},
     cashierId:{type: String},
+    mpPosId:{type: String},
     boxName:{type: String},
     boxNumber:{type: String},
     location:{type: String},

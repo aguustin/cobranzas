@@ -335,11 +335,11 @@ export const webhookHandlerController = async (req, res) => {
 
     await order.save()
 
-    // ✅ Descontar stock
+    // Descontar stock
     for (const item of order.products) {
       await productModel.findByIdAndUpdate(
         item.productId,
-        { $inc: { stock: -item.productQuantity } }
+        { $inc: { stock: -item.productQuantity , totalSells: item.productQuantity} }
       )
     }
 
@@ -527,7 +527,7 @@ export const sellProductController = async (req, res) => {
 
    
     const response = await fetch(
-      `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${process.env.MP_USER_ID}/pos/SUC001POS001/qrs`,
+      `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${process.env.MP_USER_ID}/stores/${storeId}/pos/${posId}/orders`,
       {
         method: "POST",
         headers: {
@@ -625,31 +625,33 @@ export const filterByMonthController = async (req: Request<{}, {}, {}, { storeId
   return res.status(200).json(orderSells);
 };
 
-export const getDayDataController = async (req:Request<{storeId: string}>, res:Response): Promise<Response> => {
-    const {storeId} = req.params
-
+export const getDayDataController = async (
+  req: Request<{ storeId: string }>,
+  res: Response
+): Promise<Response> => {
+  try {
+    const { storeId } = req.params;
     const hoyInicio = new Date();
     hoyInicio.setHours(0, 0, 0, 0);
 
     const hoyFin = new Date();
     hoyFin.setHours(23, 59, 59, 999);
-
-    const [store, sells, box] = await Promise.all([
-   storeModel.findOne(
-  { _id: storeId },
-  {
-    managerId: 1,
-    storeImg: 1,
-    storeName: 1,
-    storePassword: 1,
-    domicile: 1,
-    identificationTaxNumber: 1,
-    phone: 1,
-    storeEmail: 1,
-    moneyType: 1,
-    active: 1,
-    months: {
-      $filter: {
+    const storeQuery = storeModel.findOne(
+      { _id: storeId },
+      {
+        managerId: 1,
+        storeImg: 1,
+        storeName: 1,
+        storePassword: 1,
+        domicile: 1,
+        identificationTaxNumber: 1,
+        phone: 1,
+        storeEmail: 1,
+        moneyType: 1,
+        active: 1,
+        storeTotalEarned: 1,
+        months: {
+          $filter: {
             input: "$months",
             as: "m",
             cond: {
@@ -661,40 +663,56 @@ export const getDayDataController = async (req:Request<{storeId: string}>, res:R
           }
         }
       }
-    ).lean(),
-    (async ()  => { 
-      const arr = sellModel.aggregate([
-      { 
-        $match: { 
-          storeId: storeId,
-          sellDate: { $gte: hoyInicio, $lte: hoyFin }
-        } 
-      },
-      {
-       $group: {
-          _id: null, // o puedes poner "$storeId" si querés identificar
-          totalSold: { $sum: "$sellQuantity" },
-          docCount: { $sum: 1 } // esto cuenta la cantidad de documentos
-        }
-      }
-    ])
-    return arr[0] || { 
-      _id: null, 
-      totalSold: 0, 
-      docCount: 0 
-    };
-    })(),
-      boxesModel.findOne({
-        storeId: storeId,
-        /*boxOpenDate: {
-          $gte: hoyInicio,
-          $lte: hoyFin
-        }*/
-      }).lean()
-    ]);
+    ).lean();
 
-    return res.status(200).json({store, sells, box})
-}
+    const sellsQuery = sellModel
+      .aggregate([
+        {
+          $match: {
+            storeId: storeId,
+            sellDate: { $gte: hoyInicio, $lte: hoyFin }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalSold: { $sum: "$sellQuantity" },
+            docCount: { $sum: 1 }
+          }
+        }
+      ])
+      .exec();
+
+    const boxQuery = boxesModel
+      .findOne({
+        storeId: storeId
+        // boxOpenDate: { $gte: hoyInicio, $lte: hoyFin }
+      })
+      .lean();
+      const [store, sellsArr, box] = await Promise.all([
+        storeQuery,
+        sellsQuery,
+        boxQuery
+      ]);
+      
+      const sells = sellsArr[0] || {
+        _id: null,
+        totalSold: 0,
+        docCount: 0
+      };
+      
+    return res.status(200).json({
+      store,
+      sells,
+      box
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error getting day data"
+    });
+  }
+};
 
 type StatsFilter = 'dia' | 'semana' | 'mes' | 'anio' | 'siempre';
 
@@ -838,7 +856,8 @@ export const getAllStatisticsController = async (req:Request<{}, {}, {query: Que
           _id: groupConfig._id,
           cantidad: { $sum: 1 },
           productos: { $sum: "$sellQuantity" },
-          ventas: { $sum: "$sellTotal" }
+          ventas: { $sum: "$sellTotal" },
+          withdrawals: { $sum: "$wi"}
         }
       },
       {
@@ -865,7 +884,7 @@ export const getAllStatisticsController = async (req:Request<{}, {}, {query: Que
       },
       {
         $group: {
-          _id: null,
+          _id: storeId,
           efectivo: { $sum: "$totalMoneyInBox" }
         }
       }
