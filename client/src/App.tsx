@@ -25,6 +25,7 @@ import ClientList from './components/clients/clientsList'
 import CashCount from './components/boxes/cashCount'
 import BoxMovement from './components/boxes/boxesMovements'
 import ExportReports from './components/reports/exportReports'
+import ConnectPayment from './components/admin/paymentMethod'
 
 
 function AppRoutes() {
@@ -63,6 +64,7 @@ function AppRoutes() {
                 <Route path='/cash_count/:storeId' element={<CashCount/>} />
                 <Route path='/boxes_movements/:storeId' element={<BoxMovement/>}/>
                 <Route path='/export_reports/:storeId' element={<ExportReports/>} />
+                <Route path='/connect_payment_method' element={<ConnectPayment/>} />
               </Routes>
             </main>
           </div>

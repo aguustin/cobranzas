@@ -6,6 +6,7 @@ import { JwtPayload } from 'jsonwebtoken';
 import { preApproval } from "../lib/mp.ts";
 import { paymentClient } from "../lib/mp.ts";
 import jwt from 'jsonwebtoken';
+import axios from "axios";
 
 interface TokenPayload extends JwtPayload  {
   email: string;
@@ -286,6 +287,119 @@ export const getAllManagersController = async (req: Request<{}>, res:Response): 
     
     return res.send(getAllManagers)
  }
+
+
+ export const connectPayPalController = async (req, res) => {
+  const {userId} = req.body
+   try {
+ 
+     const clientId = process.env.PAYPAL_CLIENT_ID
+     const redirectUri = process.env.PAYPAL_REDIRECT_URI
+ 
+     const scope = "openid email https://uri.paypal.com/services/payments/basic"
+
+     //PARA PRODUCCION const url = `https://www.paypal.com/signin/authorize?client_id=${clientId}&response_type=code&scope=${encodeURIComponent(scope)}&redirect_uri=${redirectUri}&state=${userId}`
+     const url = `${process.env.PAYPAL_SANDBOX_URL}/signin/authorize?client_id=${clientId}&response_type=code&scope=${encodeURIComponent(scope)}&redirect_uri=${redirectUri}&state=${userId}`
+     res.json({ url })
+ 
+   } catch (error) {
+     res.status(500).json({ message: error.message })
+   }
+ }
+ 
+ export const paypalCallbackController = async (req, res) => {
+   try {
+ 
+     const { code } = req.query
+     const userId = req.query.state
+     const clientId = process.env.PAYPAL_CLIENT_ID
+     const clientSecret = process.env.PAYPAL_CLIENT_SECRET
+ 
+     const auth = Buffer
+       .from(`${clientId}:${clientSecret}`)
+       .toString("base64")
+
+      const params = new URLSearchParams()
+      params.append("grant_type", "authorization_code")
+      params.append("code", code)
+
+     const response = await axios.post(
+      `${process.env.PAYPAL_SANDBOX_URL}/v1/oauth2/token`,
+      params,
+      {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/x-www-form-urlencoded"
+        }
+      }
+    )
+ 
+     const {
+       access_token,
+       refresh_token,
+       merchant_id
+     } = response.data
+ 
+     // Guardar en tu DB
+
+     await managerModel.findByIdAndUpdate(
+      {_id:userId},
+      {
+        "paymentAccounts.paypal.merchantId": merchant_id,
+        "paymentAccounts.paypal.accessToken": access_token,
+        "paymentAccounts.paypal.refreshToken": refresh_token,
+      })
+     // store.paypalMerchantId = merchant_id
+ 
+     res.redirect(`${process.env.DEV_URL_FRONT}/paypal-connected`)
+ 
+   } catch (error) {
+ 
+     console.log(error.response?.data || error.message)
+ 
+     res.status(500).json({
+       message: "Error connecting PayPal"
+     })
+   }
+ }
+
+
+ export const createPayPalOrder = async (req, res) => {
+
+  const { amount, userId } = req.body
+
+  const user = await managerModel.findById(userId)
+
+  const merchantId = user.paymentAccounts.paypal.merchantId
+
+  const accessToken = await getPayPalAccessToken()
+
+  const response = await axios.post(
+    `${process.env.PAYPAL_SANDBOX_URL}/v2/checkout/orders`,
+    {
+      intent: "CAPTURE}",
+      purchase_units: [
+        {
+          amount: {
+            currency_code: "USD",
+            value: amount
+          },
+          payee: {
+            merchant_id: merchantId
+          }
+        }
+      ]
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      }
+    }
+  )
+
+  res.json(response.data)
+}
 
 /** const { managerId, cardToken, email } = req.body;
 

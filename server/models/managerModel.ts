@@ -10,6 +10,25 @@ const ManagerSchema = new mongoose.Schema({
         payment: {type: Number},
         paymentDate: {type: Date}
     }],
+    paymentAccounts: {
+        paypal: {
+            merchantId: String,
+            accessToken: String,
+            refreshToken: String,
+            connected: { type: Boolean, default: false }
+        },
+        mercadopago: {
+            userId: String,
+            accessToken: String,
+            refreshToken: String,
+            connected: { type: Boolean, default: false }
+        },
+        stripe: {
+            accountId: String,
+            connected: { type: Boolean, default: false }
+        }
+
+    },
     language:{type: String},
     subscription:{type: String},
     subscriptionStatus: {type: String},

@@ -1187,7 +1187,6 @@ export const getOrdersController = async (req:Request, res:Response): Promise<Re
   return res.status(200).json(orders)
 }
 
-
 /** // =========================
     // Actualizar stock en paralelo
     // =========================

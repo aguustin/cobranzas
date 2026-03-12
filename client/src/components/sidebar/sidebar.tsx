@@ -226,6 +226,17 @@ const Sidebar = () => {
                                         Configuración
                                     </Link>
                                     <Link 
+                                        to={`/connect_payment_method`} 
+                                        className="flex items-center gap-2 px-4 py-3 hover:bg-gray-750 transition-colors text-sm"
+                                        onClick={() => {
+                                            setDropdownAdmin(false)
+                                            handleCloseSidebar()
+                                        }}
+                                    >
+                                        <CreditCard size={16} className="text-gray-400" />
+                                        Cobros / Pagos
+                                    </Link>
+                                    <Link 
                                         to={`/subscription/${session._id}`} 
                                         className="flex items-center gap-2 px-4 py-3 hover:bg-gray-750 transition-colors text-sm"
                                         onClick={() => {

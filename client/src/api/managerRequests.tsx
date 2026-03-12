@@ -18,3 +18,5 @@ export const changePlanRequest = (data, jwtToken) =>
       },
     }
   );
+
+export const connectPayPalRequest = ({userId}) => axios.post("/api/paypal/connect", {userId})
