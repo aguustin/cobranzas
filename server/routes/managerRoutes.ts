@@ -1,5 +1,5 @@
 import {Router} from "express"
-import { changePlanController, connectPayPalController, createManagerContoller, getAllManagersController, loginManagerController, mercadoPagoWebhookController, paypalCallbackController } from "../controllers/managerController.ts"
+import { changePlanController, createManagerContoller, createPayPalOrderController, getAllManagersController, getPayPalAccessTokenController, loginManagerController, mercadoPagoWebhookController } from "../controllers/managerController.ts"
 
 const router = Router()
 
@@ -13,8 +13,8 @@ router.post('/change_plan', changePlanController)
 
 router.post('/webhook', mercadoPagoWebhookController)
 
-router.post('/connect', connectPayPalController)
+router.post('/api/paypal/connect', getPayPalAccessTokenController)
 
-router.get('/callback', paypalCallbackController)
+router.get('/paypal_order', createPayPalOrderController)
 
 export default router

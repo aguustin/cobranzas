@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getSellDataRequest, newSellRequest } from '../../api/sellRequests';
 import axios from 'axios';
 import ContextBody from '../../context';
+import ConnectPayment from '../admin/paymentMethod';
 
 const NewSell = () => {
 
@@ -48,6 +49,7 @@ const NewSell = () => {
   const [email, setEmail] = useState<string | null>()
   const [showClientForm, setShowClientForm] = useState(false)
   const [products, setProducts] = useState<ProductFrontend[]>([]);
+  const [showPayments, setShowPayments] = useState<boolean | null>(false)
   const navigation = useNavigate()
 
   // Simular obtención de productos de la base de datos
@@ -192,7 +194,7 @@ const NewSell = () => {
   };
 
 const newSellFunc = async () => {
-  console.log(sellData, ' ', cashierId, ' ', storeId)
+  
   if (!sellData || !cashierId) return;
 
   // Solo enviamos los campos necesarios
@@ -472,20 +474,21 @@ const newSellFunc = async () => {
                     <span className="text-green-400 font-bold">{formatCurrency(cartTotals.total)}</span>
                   </div>
 
-                  {/* Botón Finalizar Venta */}
+                  {/* Botón Generar Pago */}
                   <button
-                    onClick={newSellFunc}
+                    onClick={() => setShowPayments(!showPayments)}
                     type='button'
                     className="w-full mt-4 flex items-center justify-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-green-500/20"
                   >
                     <ShoppingCart size={20} />
-                    Finalizar Venta
+                   {showPayments ? 'Cerrar Pago' : 'Generar Pago'}
                   </button>
                 </div>
               )}
             </div>
           </div>
         </div>
+            {showPayments && <ConnectPayment onNewSell={newSellFunc}/>}
       </div>
     </div>
   );

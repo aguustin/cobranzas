@@ -87,7 +87,7 @@ const CheckoutForm = () => {
 const generateCardToken = async () => {
   e.preventDefault()
   const mp = await loadMercadoPago();
-  mp.initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY, {
+  mp.initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY_DEV, {
     locale: "es-AR",
   });
 

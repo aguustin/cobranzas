@@ -524,10 +524,28 @@ export const sellProductController = async (req, res) => {
     // =========================
     // 2 Crear orden QR en Mercado Pago
     // =========================
+    const res = await fetch(`https://api.mercadopago.com/pos`, {
+      headers: {
+        Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
+      }
+    });
 
-   
+    const dataPos = await res.json();
+    console.log(dataPos.results?.[0]?.id)
+    const posId = process.env.POS_ID_MP;
+    
+
+    /*const storesRes = await fetch("https://api.mercadopago.com/users/me/stores", {
+      headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN_DEV}`,
+      "Content-Type": "application/json" }
+    });
+    console.log('storeid', storesRes)
+    const stores = await storesRes.json();*/
+    const storeIds = process.env.STORE_ID
+
+
     const response = await fetch(
-      `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${process.env.MP_USER_ID}/stores/${storeId}/pos/${posId}/orders`,
+      `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${process.env.MP_USER_ID}/stores/${storeIds}/pos/${posId}/orders`,
       {
         method: "POST",
         headers: {
@@ -932,7 +950,7 @@ const buildMatchFilter = (storeId, filters) => {
   if (filters.cashierId) {
     match.cashierId = filters.cashierId
   }
-console.log('cashierId: ', filters.cashierId)
+
   if (filters.productId) {
     match["products.productId"] = filters.productId
   }

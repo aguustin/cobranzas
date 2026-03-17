@@ -3,7 +3,7 @@ import { CreditCard, CheckCircle, XCircle, Settings, ExternalLink, Shield, Dolla
 import ContextBody from '../../context';
 import { connectPayPalRequest } from '../../api/managerRequests';
 
-const ConnectPayment = () => {
+const ConnectPayment = ({ onNewSell }) => {
   const { session } = useContext(ContextBody)
   console.log(import.meta.env.VITE_CLIENT_ID)
   const [paymentProviders, setPaymentProviders] = useState([
@@ -46,17 +46,17 @@ const ConnectPayment = () => {
   ]);
 
 
-  const [selectedProvider, setSelectedProvider] = useState(null);
+ /* const [selectedProvider, setSelectedProvider] = useState(null);
   const [connectForm, setConnectForm] = useState({
     email: '',
     apiKey: '',
     secretKey: ''
-  });
+  });*/
 
   const paymentGateway = async (gatewayType: number) => {
     switch (gatewayType){
         case 1:
-           
+            await onNewSell();
             break;
         case 2:
             
@@ -72,7 +72,7 @@ const ConnectPayment = () => {
     setSelectedProvider(provider);
   };*/
 
-  const handleDisconnect = (providerId) => {
+  /*const handleDisconnect = (providerId) => {
     setPaymentProviders(prev =>
       prev.map(p =>
         p.id === providerId
@@ -80,7 +80,7 @@ const ConnectPayment = () => {
           : p
       )
     );
-  };
+  };*/
 
   const connectedCount = paymentProviders.filter(p => p.connected).length;
 
@@ -188,23 +188,23 @@ const ConnectPayment = () => {
 
                   {/* Botón de Acción */}
                   <div>
-                    {provider.connected ? (
-                      <button
+                    {/*provider.connected ? (
+                      /*<button
                         onClick={() => handleDisconnect(provider.id)}
                         className="px-6 py-2.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg font-semibold transition-all border border-red-600/30"
                       >
                         Desconectar
                       </button>
-                    ) : (
+                      ) : (
+                      )*/}
                     
                         <button
                             onClick={() => paymentGateway(provider.authUrl)}
                             className={`px-6 py-2.5 bg-gradient-to-r ${provider.color} hover:opacity-90 text-white rounded-lg font-semibold transition-all shadow-lg`}
                         >
-                            Conectar
+                            Elegir metodo
                         </button>
                     
-                    )}
                   </div>
                 </div>
 
