@@ -52,11 +52,12 @@ const ConnectPayment = ({ onNewSell }) => {
     apiKey: '',
     secretKey: ''
   });*/
-
+  let resd;
   const paymentGateway = async (gatewayType: number) => {
     switch (gatewayType){
         case 1:
-            await onNewSell();
+            resd = await onNewSell();
+            console.log(resd.data)
             break;
         case 2:
             

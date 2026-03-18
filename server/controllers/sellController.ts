@@ -364,12 +364,10 @@ export const sellProductController = async (req, res) => {
       clientName,
       phone,
       email
-    } = req.body
-
-    let paymentType;
+    } = req.body;
 
     if (!products?.length) {
-      return res.status(400).json({ message: "No products provided" })
+      return res.status(400).json({ message: "No products provided" });
     }
 
     const paymentDiscounts: Record<string, number> = {
@@ -377,50 +375,47 @@ export const sellProductController = async (req, res) => {
       tarjeta_debito: 20,
       tarjeta_credito: 30,
       transferencia: 40
-    }
+    };
 
-    let remainingGiftCardMount = giftMount
-    let storeSubTotal = 0
-    let storeTaxes = 0
-    const calculatedProducts: any[] = []
+    let remainingGiftCardMount = giftMount;
+    let storeSubTotal = 0;
+    let storeTaxes = 0;
+    const calculatedProducts: any[] = [];
+    let paymentType;
 
     // =========================
     // Calcular montos reales
     // =========================
     for (const p of products) {
-      const productFromDB = await productModel.findById(p.productId)
+      const productFromDB = await productModel.findById(p.productId);
       if (!productFromDB)
-        throw new Error(`Producto no encontrado: ${p.productId}`)
+        throw new Error(`Producto no encontrado: ${p.productId}`);
 
-      const subTotalPrice =
-        productFromDB.productPrice * p.productQuantity
-      
+      const subTotalPrice = productFromDB.productPrice * p.productQuantity;
       const totalDiscount =
-        (paymentDiscounts[p.paymentType] || 0) +
-        (p.productDiscount || 0)
-      
+        (paymentDiscounts[p.paymentType] || 0) + (p.productDiscount || 0);
+
       let discountedSubTotal =
-        subTotalPrice - (subTotalPrice * totalDiscount) / 100
+        subTotalPrice - (subTotalPrice * totalDiscount) / 100;
 
       if (remainingGiftCardMount > 0) {
         if (discountedSubTotal <= remainingGiftCardMount) {
-          remainingGiftCardMount -= discountedSubTotal
-          discountedSubTotal = 0
+          remainingGiftCardMount -= discountedSubTotal;
+          discountedSubTotal = 0;
         } else {
-          discountedSubTotal -= remainingGiftCardMount
-          remainingGiftCardMount = 0
+          discountedSubTotal -= remainingGiftCardMount;
+          remainingGiftCardMount = 0;
         }
       }
-
 
       const totalEarned = Math.max(
         0,
         discountedSubTotal - productFromDB.productTaxe
-      )
-      
-      storeSubTotal += discountedSubTotal
-      storeTaxes += (subTotalPrice * productFromDB.productTaxe) / 100
-      
+      );
+
+      storeSubTotal += discountedSubTotal;
+      storeTaxes += (subTotalPrice * productFromDB.productTaxe) / 100;
+
       calculatedProducts.push({
         productId: productFromDB._id,
         productName: productFromDB.productName,
@@ -430,82 +425,76 @@ export const sellProductController = async (req, res) => {
         subTotalEarned: discountedSubTotal,
         totalEarned,
         totalDiscount
-      })
-      paymentType = p.paymentType
+      });
+
+      paymentType = p.paymentType;
     }
-    
-    const totalToPay = calculatedProducts.reduce(
-      (acc, p) => acc + p.subTotalEarned,
-      0
-    ) + storeTaxes
+
+    const totalToPay =
+      calculatedProducts.reduce((acc, p) => acc + p.subTotalEarned, 0) +
+      storeTaxes;
 
     const clientQuantity = calculatedProducts.reduce(
-      (acc, c) => acc + c.productQuantity, 
+      (acc, c) => acc + c.productQuantity,
       0
-    )
-    
-    const externalReference = uuidv4()
+    );
+
+    const externalReference = uuidv4();
 
     // =========================
-    // 1️ Crear orden en tu DB (PENDING)
+    // Crear o actualizar cliente
     // =========================
-    const client = await clientModel.findOne({ 
-      storeId: storeId,
-      phone: phone // o email si es único
-    });
-
-    if(!client){
-      console.log('no se encontro ', clientName, ' ', phone, ' ', email)
-       await clientModel.create({
+    const client = await clientModel.findOne({ storeId, phone });
+    if (!client) {
+      await clientModel.create({
         storeId,
-        clientName:clientName,
-        phone:Number(phone),
-        email:email,
+        clientName,
+        phone: Number(phone),
+        email,
         clientProductQuantity: clientQuantity,
         totalSpent: totalToPay,
         giftCard: 0,
         active: true
       });
-    }else{
-      console.log('se encontro')
+    } else {
       await clientModel.updateOne(
+        { storeId, phone },
         {
-          storeId: storeId,
-          phone: phone,
-        },
-        {
-          $inc: {
-            clientProductQuantity: clientQuantity,
-            totalSpent: totalToPay
-          },
-          $set: {
-            clientName: clientName,
-            email: email
-          }
+          $inc: { clientProductQuantity: clientQuantity, totalSpent: totalToPay },
+          $set: { clientName, email }
         }
       );
     }
-     if(paymentType === 'efectivo'){
-      
-      Promise.all([
-         await orderModel.create({
-            paymentType: "efective",
-            paidAt: Date.now(),
-            storeId,
-            storeName,
-            cashierId,
-            boxId,
-            products: calculatedProducts,
-            storeSubTotal,
-            storeTaxes,
-            totalToPay,
-        }),
 
-        await boxesModel.updateOne({_id: boxId}, {$inc:{cashSales: totalToPay, totalMoneyInBox: totalToPay}})
-      ])
-      return res.status(200).json(1)
+    // =========================
+    // Pago en efectivo
+    // =========================
+    if (paymentType === "efectivo") {
+      await Promise.all([
+        orderModel.create({
+          paymentType: "efective",
+          paidAt: Date.now(),
+          storeId,
+          storeName,
+          cashierId,
+          boxId,
+          products: calculatedProducts,
+          storeSubTotal,
+          storeTaxes,
+          totalToPay
+        }),
+        boxesModel.updateOne(
+          { _id: boxId },
+          { $inc: { cashSales: totalToPay, totalMoneyInBox: totalToPay } }
+        )
+      ]);
+
+      return res.status(200).json(1);
     }
 
+    // =========================
+    // 1️⃣ Crear orden PENDING en DB
+    // =========================
     const order = await orderModel.create({
       externalReference,
       paidAt: Date.now(),
@@ -519,92 +508,79 @@ export const sellProductController = async (req, res) => {
       storeTaxes,
       totalToPay,
       status: "pending"
-    })
-
-    // =========================
-    // 2 Crear orden QR en Mercado Pago
-    // =========================
-    const res = await fetch(`https://api.mercadopago.com/pos`, {
-      headers: {
-        Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
-      }
     });
 
-    const dataPos = await res.json();
-    console.log(dataPos.results?.[0]?.id)
-    const posId = process.env.POS_ID_MP;
-    
+    // =========================
+    // 2️ Crear orden QR en Mercado Pago
+    // =========================
+    console.log(totalToPay, ' ',calculatedProducts[0].productName , ' ', externalReference, ' ', calculatedProducts[0].productQuantity, ' ',calculatedProducts[0].productPrice, ' ', calculatedProducts[0].subTotalEarned)
+    // Construimos la URL con los parámetros necesarios
+    const url = `https://api.mercadopago.com/instore/qr/seller/collectors/${process.env.MP_USER_ID}/stores/${process.env.STORE_ID}/pos/SUC005POS001/orders`;
 
-    /*const storesRes = await fetch("https://api.mercadopago.com/users/me/stores", {
-      headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN_DEV}`,
-      "Content-Type": "application/json" }
-    });
-    console.log('storeid', storesRes)
-    const stores = await storesRes.json();*/
-    const storeIds = process.env.STORE_ID
+const itemsParaMP = calculatedProducts.map(p => ({
+    sku_number: "VENTA",
+    title: p.productName,
+    quantity: Number(p.productQuantity),
+    unit_price: Number(p.productPrice),
+    unit_measure: "unit",
+    total_amount: Number(p.productPrice) * Number(p.productQuantity)
+}));
 
+// Sumamos todos los subtotales de los items
+const totalReal = itemsParaMP.reduce((acc, item) => acc + item.total_amount, 0);
 
-    const response = await fetch(
-      `https://api.mercadopago.com/instore/orders/qr/seller/collectors/${process.env.MP_USER_ID}/stores/${storeIds}/pos/${posId}/orders`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          external_reference: externalReference,
-          title: "Venta NovaStore",
-          description: "Venta mostrador",
-          total_amount: Number(totalToPay),
-          items: [
-            {
-              sku_number: "VENTA",
-              category: "others",
-              title: "Venta productos",
-              quantity: 1,
-              unit_price: Number(totalToPay),
-              unit_measure: "unit",
-              total_amount: Number(totalToPay)
-            }
-          ]
-        })
-      }
-    )
-
-    //https://0a15-200-32-101-183.ngrok-free.app
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      // Si falla MP, eliminar orden pending
-      await orderModel.findByIdAndDelete(order._id)
-      console.log("MP STATUS:", response.status)
-      console.log("MP ERROR FULL:", data)
-      throw new Error(data.message || "Error creating MP order")
+const body = {
+    external_reference: externalReference,
+    title: "Venta NovaStore",
+    description: "Venta mostrador",
+    total_amount: totalReal, 
+    items: itemsParaMP,
+    cash_out: {
+        amount: 0
     }
-    
-    // Guardar id de MP
-    order.orderId = data.id
-    await order.save()
+};
 
-    const qrImage = await QRCode.toDataURL(data.qr_data)
+// Log para debug antes de enviar (Copia esto en tu consola y suma los subtotales a mano)
+console.log("Cuerpo enviado a MP:", JSON.stringify(body, null, 2));
+
+const response = await fetch(url, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify(body)
+});
+
+// 1. Verificamos si la respuesta es exitosa pero vacía (204)
+if (response.status === 204) {
+  console.log("¡Orden cargada con éxito en el QR!");
+  // Aquí ya puedes continuar tu lógica, por ejemplo, devolver un success al frontend
+  return res.status(200).json({ message: "Orden enviada al QR" });
+}
+    const data = await response.json();
+
+    // Guardar id de MP y QR
+    order.orderId = data.id;
+    await order.save();
+
+    const qrImage = await QRCode.toDataURL(data.qr.qr_code);
 
     return res.status(200).json({
       message: "Venta iniciada - esperando pago",
       qrImage,
-      mpOrderId: data.in_store_order_id,
+      mpOrderId: data.id,
       remainingGiftCardMount
-    })
+    });
 
   } catch (error) {
-    console.error(error)
+    console.error(error);
     return res.status(500).json({
       message: "Error processing sale",
       error: error.message
-    })
+    });
   }
-}
+};
 
 export const orderByQuantityController = async (req: Request<{}, {}, {}, {storeId: string, order: number}>, res: Response): Promise<Response> => {
     const {storeId, order} = req.query

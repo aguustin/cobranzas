@@ -23,7 +23,8 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
     useEffect(() => {
         const getSession = async () => {
             setSession(JSON.parse(localStorage.getItem('manager') || '{}'))
-            setCurrentStore(sessionStorage.getItem('storeId') || '{}')
+            setCurrentStore(localStorage.getItem('storeId') || '{}')
+            setCashierSession(localStorage.getItem('cashier') || '{}')
         }
         getSession()
     }, [])
@@ -37,8 +38,8 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
 
     const getStoreByIdContext = async ({storeId}: string) => {
        const res = await getStoreByIdRequest({storeId})
-       sessionStorage.setItem('storeId', res.data._id);
-       setCurrentStore(sessionStorage.getItem('storeId'))
+       localStorage.setItem('storeId', res.data._id);
+       setCurrentStore(localStorage.getItem('storeId'))
     }
 
     const loginCashierContext = async (userData) => {
