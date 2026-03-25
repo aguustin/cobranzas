@@ -1,11 +1,14 @@
-import  { useContext, useState } from 'react';
+import  { useContext, useEffect, useRef, useState } from 'react';
 import { CreditCard, CheckCircle, XCircle, Settings, ExternalLink, Shield, DollarSign, Info } from 'lucide-react';
 import ContextBody from '../../context';
-import { connectPayPalRequest } from '../../api/managerRequests';
+import { connectPayPalRequest } from '../../api/sellRequests';
+import axios from 'axios';
 
 const ConnectPayment = ({ onNewSell }) => {
   const { session } = useContext(ContextBody)
-  console.log(import.meta.env.VITE_CLIENT_ID)
+  const [showPayPal, setShowPayPal] = useState(false)
+  const paypalRef = useRef(null)
+
   const [paymentProviders, setPaymentProviders] = useState([
     {
       id: 'mercadopago',
@@ -57,17 +60,55 @@ const ConnectPayment = ({ onNewSell }) => {
     switch (gatewayType){
         case 1:
             resd = await onNewSell();
-            console.log(resd.data)
+            console.log(resd)
             break;
         case 2:
             
             break;
         case 3:     
-            const res = await connectPayPalRequest({userId:session._id})
-            window.location.href = res.data.url
+            setShowPayPal(true)
         break;    
     }
   }
+
+
+
+  useEffect(() => {
+
+    if (!showPayPal) return
+
+    if (!window.paypal) return
+
+    window.paypal.Buttons({
+
+      createOrder: async () => {
+        const res = await axios.post("/api/paypal/create-order", {
+          amount: "10.00" // 🔥 cámbialo dinámico
+        })
+
+        return res.data.id
+      },
+
+      onApprove: async (data) => {
+
+        await axios.post("/api/paypal/capture-order", {
+          orderId: data.orderID
+        })
+
+        // 🔥 ejecutas tu lógica de venta
+        await onNewSell()
+
+        alert("Pago exitoso ✅")
+      },
+
+      onError: (err) => {
+        console.error("PayPal error:", err)
+        alert("Error en el pago ❌")
+      }
+
+    }).render(paypalRef.current)
+
+  }, [showPayPal])
 
   /*const handleConnect = (provider) => {
     setSelectedProvider(provider);
@@ -270,6 +311,12 @@ const ConnectPayment = ({ onNewSell }) => {
           </div>
         </div>
       </div>
+         {showPayPal && (
+        <div>
+          <h3>Pagar con PayPal</h3>
+          <div ref={paypalRef}></div>
+        </div>
+      )}
     </div>
   );
 }

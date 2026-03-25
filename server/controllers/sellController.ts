@@ -21,12 +21,12 @@ export const getSellDataController = async (
 ) => {
   try {
     const { storeId, cashierId } = req.query;
-  
+    console.log('asdasdasd: ', storeId, ' ', cashierId)
     const [store, box] = await Promise.all([
       storeModel.findById(storeId).select("storeName"),
-      boxesModel.findOne({ storeId, cashierId, isOpen: true })
+      boxesModel.findOne({ storeId, cashierId})
     ]);
-
+    console.log(store?.storeName, ' ', box , ' ')
     return res.status(200).json({
       storeName: store.storeName,
       boxId: box!._id
@@ -294,25 +294,30 @@ export const getSellDataController = async (
 
 export const webhookHandlerController = async (req, res) => {
   try {
-    const { type, data } = req.body
+    const { action, type, data } = req.body
 
-    if (type !== "payment") {
+    if (type !== "payment" && action !== "payment.created") {
       return res.sendStatus(200)
     }
+
+    const paymentId = data.id;
+    if (!paymentId) return res.sendStatus(200);
 
     const paymentClient = new Payment(mp)
 
     const payment = await paymentClient.get({
-      id: data.id
+      id: paymentId
     })
 
     if (payment.status !== "approved") {
+      console.log("Pago no de aprobado...");
       return res.sendStatus(200)
     }
 
     const externalReference = payment.external_reference
 
     if (!externalReference) {
+      console.log("Notificación sin external_reference, ignorando...");
       return res.sendStatus(200)
     }
 
@@ -328,7 +333,7 @@ export const webhookHandlerController = async (req, res) => {
 
     // ✅ Actualizar orden
     order.status = "approved"
-    order.paymentId = payment.id?.toString()
+    order.paymentId = paymentId?.toString()
     order.paymentMethod = payment.payment_method_id
     order.paymentStatusDetail = payment.status_detail
     order.paidAt = new Date()
@@ -336,11 +341,24 @@ export const webhookHandlerController = async (req, res) => {
     await order.save()
 
     // Descontar stock
-    for (const item of order.products) {
-      await productModel.findByIdAndUpdate(
+    const stockUpdates = order.products.map(item => 
+      productModel.findByIdAndUpdate(
         item.productId,
-        { $inc: { stock: -item.productQuantity , totalSells: item.productQuantity} }
+        { 
+          $inc: { 
+            stock: -item.productQuantity, 
+            totalSells: item.productQuantity 
+          } 
+        }
       )
+    );
+    await Promise.all(stockUpdates);
+
+    if (order._id) {
+      await boxesModel.updateOne(
+        { _id: order._id },
+        { $inc: { totalMoneyInBox: order.totalToPay } }
+      );
     }
 
     return res.sendStatus(200)
@@ -514,8 +532,9 @@ export const sellProductController = async (req, res) => {
     // 2️ Crear orden QR en Mercado Pago
     // =========================
     console.log(totalToPay, ' ',calculatedProducts[0].productName , ' ', externalReference, ' ', calculatedProducts[0].productQuantity, ' ',calculatedProducts[0].productPrice, ' ', calculatedProducts[0].subTotalEarned)
-    // Construimos la URL con los parámetros necesarios
-    const url = `https://api.mercadopago.com/instore/qr/seller/collectors/${process.env.MP_USER_ID}/stores/${process.env.STORE_ID}/pos/SUC005POS001/orders`;
+    // Construimos la URL con los parámetros necesarios 
+    // 127615028 o  SUC005POS001
+    const url = `https://api.mercadopago.com/instore/qr/seller/collectors/${process.env.MP_USER_ID}/stores/${process.env.STORE_ID}/pos/${process.env.POS_ID}/orders`;
 
 const itemsParaMP = calculatedProducts.map(p => ({
     sku_number: "VENTA",
@@ -541,37 +560,31 @@ const body = {
 };
 
 // Log para debug antes de enviar (Copia esto en tu consola y suma los subtotales a mano)
-console.log("Cuerpo enviado a MP:", JSON.stringify(body, null, 2));
+console.log(externalReference);
 
 const response = await fetch(url, {
-  method: "POST",
+  method: "PUT",
   headers: {
     Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
     "Content-Type": "application/json",
+    "X-Idempotency-Key": externalReference 
   },
   body: JSON.stringify(body)
 });
 
-// 1. Verificamos si la respuesta es exitosa pero vacía (204)
 if (response.status === 204) {
   console.log("¡Orden cargada con éxito en el QR!");
-  // Aquí ya puedes continuar tu lógica, por ejemplo, devolver un success al frontend
-  return res.status(200).json({ message: "Orden enviada al QR" });
+  
+  const qrImage = await QRCode.toDataURL(process.env.MP_QR_NATIVO_CAJA_1);
+
+  return res.status(200).json({
+    message: "Venta iniciada - esperando pago",
+    qrImage,
+    remainingGiftCardMount,
+    totalSent: totalReal
+  });
 }
-    const data = await response.json();
 
-    // Guardar id de MP y QR
-    order.orderId = data.id;
-    await order.save();
-
-    const qrImage = await QRCode.toDataURL(data.qr.qr_code);
-
-    return res.status(200).json({
-      message: "Venta iniciada - esperando pago",
-      qrImage,
-      mpOrderId: data.id,
-      remainingGiftCardMount
-    });
 
   } catch (error) {
     console.error(error);
@@ -1179,6 +1192,82 @@ export const getOrdersController = async (req:Request, res:Response): Promise<Re
   const {storeId} = req.body
   const orders = await orderModel.find({storeId: storeId})
   return res.status(200).json(orders)
+}
+
+
+//INTERGRACION PAYPAL
+
+export const getPayPalAccessToken = async () => {
+
+  const auth = Buffer
+    .from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`)
+    .toString("base64")
+
+  const params = new URLSearchParams()
+  params.append("grant_type", "client_credentials")
+
+  const response = await axios.post(
+    "https://api-m.sandbox.paypal.com/v1/oauth2/token",
+    params,
+    {
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    }
+  )
+
+  return response.data.access_token
+}
+
+export const createOrder = async (req, res) => {
+
+  const { amount } = req.body
+
+  const accessToken = await getPayPalAccessToken()
+
+  const response = await axios.post(
+    "https://api-m.sandbox.paypal.com/v2/checkout/orders",
+    {
+      intent: "CAPTURE",
+      purchase_units: [
+        {
+          amount: {
+            currency_code: "USD",
+            value: amount
+          }
+        }
+      ]
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      }
+    }
+  )
+
+  res.json(response.data)
+}
+
+
+export const captureOrder = async (req, res) => {
+
+  const { orderId } = req.body
+
+  const accessToken = await getPayPalAccessToken()
+
+  const response = await axios.post(
+    `https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderId}/capture`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
+  )
+
+  res.json(response.data)
 }
 
 /** // =========================

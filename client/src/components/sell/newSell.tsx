@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { Search, Plus, Trash2, ShoppingCart, DollarSign, Package, CreditCard, Banknote } from 'lucide-react';
+import { Search, Plus, Trash2, ShoppingCart, DollarSign, Package, CreditCard, Banknote, X, QrCode } from 'lucide-react';
 import { listProductsRequest } from '../../api/productRequests';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getSellDataRequest, newSellRequest } from '../../api/sellRequests';
@@ -50,6 +50,7 @@ const NewSell = () => {
   const [showClientForm, setShowClientForm] = useState(false)
   const [products, setProducts] = useState<ProductFrontend[]>([]);
   const [showPayments, setShowPayments] = useState<boolean | null>(false)
+  const [qrPaymentData, setQrPaymentData] = useState(null);
   const navigation = useNavigate()
 
   // Simular obtención de productos de la base de datos
@@ -74,7 +75,6 @@ const NewSell = () => {
     const loadSellData = async () => {
       if (!cashierId) return;
       const res = await getSellDataRequest(storeId, cashierId);
-      console.log(res.data)
       setSellData({
         storeName: res.data.storeName,
         boxId: res.data.boxId
@@ -195,8 +195,8 @@ const NewSell = () => {
 
 const newSellFunc = async () => {
   
+  console.log('sellData: ', sellData, ' ', 'cashier id: ', cashierId)
   if (!sellData || !cashierId) return;
-
   // Solo enviamos los campos necesarios
   const productsToSend = products.map(p => ({
     productId: p.productId,
@@ -219,14 +219,19 @@ const newSellFunc = async () => {
     });
 
     console.log("Venta realizada:", res.data);
-
+    setQrPaymentData(res.data)
     // Limpiar carrito después de la venta
     setProducts([]);
+    return res.data;
   } catch (error) {
     console.error("Error al realizar la venta:", error);
   }
 };
 
+  const handleCloseQr = () => {
+    setQrPaymentData(null);
+  };
+  console.log(qrPaymentData)
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
@@ -489,6 +494,111 @@ const newSellFunc = async () => {
           </div>
         </div>
             {showPayments && <ConnectPayment onNewSell={newSellFunc}/>}
+
+             {qrPaymentData && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 ">
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl overflow-scroll h-full no-scrollbar">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-600 rounded-lg">
+                    <QrCode size={24} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">Escanea para Pagar</h3>
+                    <p className="text-sm text-gray-400">Esperando confirmación...</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseQr}
+                  className="p-2 hover:bg-gray-700 rounded-lg transition-all"
+                >
+                  <X size={24} className="text-gray-400" />
+                </button>
+              </div>
+
+              {/* QR Code */}
+              <div className="p-8">
+                <div className="bg-white rounded-2xl p-6 mb-6">
+                  <img 
+                    src={qrPaymentData.qrImage} 
+                    alt="QR Code para pago"
+                    className="w-full h-auto"
+                  />
+                </div>
+
+                {/* Información del Pago */}
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between items-center p-3 bg-gray-800/50 rounded-lg">
+                    <span className="text-gray-400">Total a Pagar:</span>
+                    <span className="text-2xl font-bold text-green-400">
+                      {formatCurrency(qrPaymentData.totalSent)}
+                    </span>
+                  </div>
+
+                  {qrPaymentData.remainingGiftCardMount > 0 && (
+                    <div className="flex justify-between items-center p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
+                      <span className="text-yellow-400 text-sm">Saldo Gift Card Aplicado:</span>
+                      <span className="text-yellow-400 font-semibold">
+                        {formatCurrency(qrPaymentData.remainingGiftCardMount)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                    <p className="text-blue-400 text-sm text-center">
+                      {qrPaymentData.message}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Instrucciones */}
+                <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
+                  <h4 className="text-sm font-semibold text-gray-300 mb-3">Instrucciones:</h4>
+                  <ol className="space-y-2 text-sm text-gray-400">
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400 font-bold">1.</span>
+                      Abre tu aplicación de Mercado Pago
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400 font-bold">2.</span>
+                      Escanea el código QR
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400 font-bold">3.</span>
+                      Confirma el pago
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400 font-bold">4.</span>
+                      Espera la confirmación
+                    </li>
+                  </ol>
+                </div>
+
+                {/* Loading Indicator */}
+                <div className="flex items-center justify-center gap-3 p-4 bg-indigo-500/10 rounded-lg border border-indigo-500/30">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse delay-75"></div>
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse delay-150"></div>
+                  <span className="text-indigo-400 text-sm font-medium ml-2">
+                    Esperando confirmación del pago...
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-gray-700">
+                <button
+                  onClick={handleCloseQr}
+                  className="w-full px-6 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg font-semibold transition-all border border-gray-700"
+                >
+                  Cancelar Pago
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

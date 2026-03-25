@@ -18,5 +18,3 @@ export const changePlanRequest = (data, jwtToken) =>
       },
     }
   );
-
-export const connectPayPalRequest = ({userId}) => axios.post("http://localhost:4000/api/paypal/connect", {userId})

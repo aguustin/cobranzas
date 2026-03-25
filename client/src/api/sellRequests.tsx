@@ -18,3 +18,6 @@ export const getReportRequest = async (storeId: string, reportType: string, filt
 };
 
 export const getOrdersRequest = ({storeId}) => axios.post('http://localhost:4000/orders', {storeId})
+
+
+export const connectPayPalRequest = ({userId}) => axios.post("http://localhost:4000/api/paypal/connect", {userId})

@@ -30,3 +30,29 @@ export const paymentClient = new Payment(mp);
     },
   }
 });*/
+
+//25/03/2026
+
+/**
+ * 
+ * esto puede ir dentro de response.status en caso de fallar lo otro:
+ * 
+ * // Aquí ya puedes continuar tu lógica, por ejemplo, devolver un success al frontend
+
+ //const qrString = `https://www.mercadopago.com/instore/merchant/qr/product/${process.env.MP_USER_ID}/SUC005POS001`;
+ 
+ // 2. Generamos la imagen Base64
+ /*const posConfigResponse = await fetch(
+    `https://api.mercadopago.com/pos?external_id=SUC005POS001`, 
+    {
+      headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` }
+    }
+  );
+const posData = await posConfigResponse.json();
+console.log(posData)
+// 2. Extraemos el qr_code nativo (suele empezar con '000201...')
+// Si posData.results[0] existe, usamos su qr_code
+const nativeQrCode = posData.results[0]?.qr_code;*/
+
+// 3. Generamos la imagen con ese string exacto
+//const qrImage = await QRCode.toDataURL(nativeQrCode); */
