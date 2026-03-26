@@ -493,7 +493,7 @@ const newSellFunc = async () => {
             </div>
           </div>
         </div>
-            {showPayments && <ConnectPayment onNewSell={newSellFunc}/>}
+            {showPayments && <ConnectPayment onNewSell={newSellFunc} total={cartTotals.total}/>}
 
              {qrPaymentData && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 ">

@@ -1,5 +1,5 @@
 import {Router} from "express"
-import { getAllStatisticsController, getDayDataController, getOrdersController, getReportController, getSellDataController, getSellsController, sellProductController, webhookHandlerController } from "../controllers/sellController.ts"
+import { captureOrderController, createOrderController, getAllStatisticsController, getDayDataController, getOrdersController, getReportController, getSellDataController, getSellsController, sellProductController, webhookHandlerController } from "../controllers/sellController.ts"
 
 const router = Router()
 
@@ -18,5 +18,9 @@ router.get('/get_sells', getSellsController)
 router.post("/reports/:storeId", getReportController);
 
 router.post('/orders',getOrdersController)
+
+router.post('/api/paypal/create-order',createOrderController)
+
+router.post('/api/paypal/capture-order', captureOrderController)
 
 export default router

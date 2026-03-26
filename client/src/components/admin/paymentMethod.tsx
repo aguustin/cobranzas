@@ -4,7 +4,7 @@ import ContextBody from '../../context';
 import { connectPayPalRequest } from '../../api/sellRequests';
 import axios from 'axios';
 
-const ConnectPayment = ({ onNewSell }) => {
+const ConnectPayment = ({ onNewSell, total }) => {
   const { session } = useContext(ContextBody)
   const [showPayPal, setShowPayPal] = useState(false)
   const paypalRef = useRef(null)
@@ -22,7 +22,7 @@ const ConnectPayment = ({ onNewSell }) => {
       features: ['Tarjetas de crédito y débito', 'Efectivo en puntos de pago', 'Transferencias bancarias', 'QR Code'],
       fees: '2.99% + $0.30 por transacción'
     },
-    {
+    /*{
       id: 'stripe',
       name: 'Stripe',
       description: 'Plataforma de pagos global para negocios',
@@ -33,7 +33,7 @@ const ConnectPayment = ({ onNewSell }) => {
       authUrl:2,
       features: ['Pagos internacionales', 'Suscripciones recurrentes', 'API completa', 'Anti-fraude avanzado'],
       fees: '2.9% + $0.30 por transacción'
-    },
+    },*/
     {
       id: 'paypal',
       name: 'PayPal',
@@ -80,10 +80,10 @@ const ConnectPayment = ({ onNewSell }) => {
     if (!window.paypal) return
 
     window.paypal.Buttons({
-
+   
       createOrder: async () => {
-        const res = await axios.post("/api/paypal/create-order", {
-          amount: "10.00" // 🔥 cámbialo dinámico
+        const res = await axios.post("http://localhost:4000/api/paypal/create-order", {
+          amount: total 
         })
 
         return res.data.id
@@ -91,7 +91,7 @@ const ConnectPayment = ({ onNewSell }) => {
 
       onApprove: async (data) => {
 
-        await axios.post("/api/paypal/capture-order", {
+        await axios.post("http://localhost:4000/api/paypal/capture-order", {
           orderId: data.orderID
         })
 
@@ -144,9 +144,9 @@ const ConnectPayment = ({ onNewSell }) => {
           <div className="bg-gradient-to-br from-indigo-900/40 to-indigo-800/20 border border-indigo-700/30 rounded-xl p-5">
             <div className="flex items-center gap-3 mb-2">
               <DollarSign size={24} className="text-indigo-400" />
-              <p className="text-indigo-400 text-sm font-medium">Métodos Conectados</p>
+              <p className="text-indigo-400 text-sm font-medium">Métodos Disponibles</p>
             </div>
-            <p className="text-3xl font-bold text-white">{connectedCount} / {paymentProviders.length}</p>
+            <p className="text-3xl font-bold text-white">{/*connectedCount*/} 2 / {paymentProviders.length}</p>
           </div>
 
           <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 border border-green-700/30 rounded-xl p-5">
@@ -278,10 +278,20 @@ const ConnectPayment = ({ onNewSell }) => {
                       </div>
                     )}
                   </div>
+                  
                 </div>
+                
               </div>
+              
             </div>
+            
           ))}
+             {showPayPal && (
+        <div >
+          <h3 className='text-center'>Pagar con PayPal</h3>
+          <div ref={paypalRef}></div>
+        </div>
+      )}
         </div>
 
         {/* Información de Seguridad */}
@@ -311,12 +321,7 @@ const ConnectPayment = ({ onNewSell }) => {
           </div>
         </div>
       </div>
-         {showPayPal && (
-        <div>
-          <h3>Pagar con PayPal</h3>
-          <div ref={paypalRef}></div>
-        </div>
-      )}
+      
     </div>
   );
 }

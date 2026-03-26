@@ -11,6 +11,7 @@ import QRCode from "qrcode";
 import orderModel from "../models/orderModel.ts";
 import clientModel from "../models/clientModel.ts";
 import mongoose from "mongoose";
+import axios from "axios";
 
 
 const preference = new Preference(mp);
@@ -1220,7 +1221,7 @@ export const getPayPalAccessToken = async () => {
   return response.data.access_token
 }
 
-export const createOrder = async (req, res) => {
+export const createOrderController = async (req, res) => {
 
   const { amount } = req.body
 
@@ -1251,7 +1252,7 @@ export const createOrder = async (req, res) => {
 }
 
 
-export const captureOrder = async (req, res) => {
+export const captureOrderController = async (req, res) => {
 
   const { orderId } = req.body
 
