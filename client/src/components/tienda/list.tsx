@@ -11,7 +11,6 @@ const Lists = () => {
     const [hideCreateStoreForm, setHideCreateStoreForm] = useState<boolean>(false)
 
     useEffect(() => {
-        console.log(stores)
         listStoresFunc(session._id)
     }, [session._id])
     
@@ -66,13 +65,15 @@ const Lists = () => {
             </div>
 
             {/* Botón Crear Tienda */}
-            <button 
-              onClick={() => setHideCreateStoreForm(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20 hover:scale-[1.02]"
-            >
-              <Plus size={20} />
-              Crear Tienda
-            </button>
+            {localStorage.getItem('role') !== 'cashier' && 
+              <button 
+                onClick={() => setHideCreateStoreForm(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20 hover:scale-[1.02]"
+              >
+                <Plus size={20} />
+                Crear Tienda
+              </button>
+            }
           </div>
         </div>
 
@@ -162,13 +163,14 @@ const Lists = () => {
             </div>
             <h3 className="text-2xl font-bold text-gray-300 mb-2">No hay tiendas registradas</h3>
             <p className="text-gray-500 mb-6">Comienza creando tu primera tienda</p>
-            <button 
+           {localStorage.getItem('role') !== 'cashier' && 
+           <button 
               onClick={() => setHideCreateStoreForm(true)}
               className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20"
             >
               <Plus size={20} />
               Crear Primera Tienda
-            </button>
+            </button>}
           </div>
         )}
       </div>

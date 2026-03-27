@@ -5,8 +5,6 @@ import Sidebar from './components/sidebar/sidebar'
 import Products from './components/products/products'
 import Finances from './components/tienda/finances'
 import Lists from './components/tienda/list'
-
-import LoginManager from './components/forms/loginManager'
 import RegisterManager from './components/forms/registerManager'
 import { ContextBodyProvider } from './context'
 import EditStoreForm from './components/tienda/editStore'
@@ -26,6 +24,7 @@ import CashCount from './components/boxes/cashCount'
 import BoxMovement from './components/boxes/boxesMovements'
 import ExportReports from './components/reports/exportReports'
 import ConnectPayment from './components/admin/paymentMethod'
+import Login from './components/forms/login'
 
 
 function AppRoutes() {
@@ -34,6 +33,7 @@ function AppRoutes() {
   const shouldHideNav = hideNavOnPaths.some(path =>
     matchPath({ path, end: true }, location.pathname)
   );
+  //SACAR LOGIN DEL CAJERO, SE VA A LOGUEAR POR EL FORMULARIO PRINCIPAL
     return (
     <>
         <ContextBodyProvider>
@@ -44,7 +44,7 @@ function AppRoutes() {
               <Routes>
                 <Route path='/' element={<Lists/>}/>
                 <Route path='/signIn' element={<RegisterManager/>}/>
-                <Route path='/login' element={<LoginManager/>}/>
+                <Route path='/login' element={<Login/>}/>
                 <Route path='/products/:storeId' element={<Products/>}/>
                 <Route path='/edit_product/:storeId/:productId' element={<EditProductForm/>}></Route>
                 <Route path='/statistics_product/:storeId/:productId' element={<ProductStatistics/>}></Route>
@@ -85,3 +85,4 @@ function App() {
 }
 
 export default App
+

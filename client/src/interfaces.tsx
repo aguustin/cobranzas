@@ -9,7 +9,9 @@ export interface SignInBody {
 
 export interface LoginBody {
     email: string;
+    username: string;
     password: string;
+    userRole: string;
 }
 
 export interface CreateProductBody {

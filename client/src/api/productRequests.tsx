@@ -9,3 +9,5 @@ export const getProductByIdRequest = ({storeId, productMongoId}) => axios.get(`h
 export const updateProductRequest = (formData: FormData) => axios.post('http://localhost:4000/update_product', formData)
 
 export const getProductsRequest = () => axios.get('http://localhost:4000/get_all_products')
+
+export const getallProductRequest = () => axios.get('http://localhost:4000/all_products')

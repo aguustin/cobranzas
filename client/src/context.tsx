@@ -1,6 +1,6 @@
 import {createContext, useEffect, useState } from "react"
 import type { PropsWithChildren } from "react";
-import { getStoreByIdRequest, listStoresRequest } from "./api/storeRequests";
+import { getStoreByIdRequest, listStoresByCashierRequest, listStoresRequest } from "./api/storeRequests";
 import { loginCashierRequest } from "./api/cashierRequests";
 import { useNavigate } from "react-router-dom";
 
@@ -31,6 +31,13 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
     
     
     const listStoresFunc = async (sessionId) => {
+        const session = JSON.parse(localStorage.getItem("manager") || "{}")
+
+        if (session.userRole === "cashier") {
+            const res = await listStoresByCashierRequest(sessionId)
+            setStores(res.data)
+            return;
+        }
         const res = await listStoresRequest(sessionId)
         setStores(res.data)
         console.log(res.data)

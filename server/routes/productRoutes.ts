@@ -1,5 +1,5 @@
 import {Router} from "express"
-import { getProductByIdController, listProductsController, registerProductController, updateProductController } from "../controllers/productController.ts"
+import { getAllProducts, getProductByIdController, listProductsController, registerProductController, updateProductController } from "../controllers/productController.ts"
 import multer from "multer"
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage })
@@ -14,5 +14,6 @@ router.post('/update_product', upload.single('productImg'), updateProductControl
 
 router.get('/get_product_by_id/:storeId/:productMongoId', getProductByIdController)
 
+router.get('/all_products', getAllProducts)
 
 export default router

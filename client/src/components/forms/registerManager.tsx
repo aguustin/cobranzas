@@ -8,9 +8,11 @@ import type { AxiosResponse } from "axios";
 
 const RegisterManager = () => {
     const [message, setMessage] = useState<string>('');
-    
+    const [isLoading, setIsLoading] = useState(false);
+
     const signInManager = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault()
+        setIsLoading(true);
         const form = e.currentTarget;
         const signInData: SignInBody = { 
             email: form.email.value,
@@ -23,44 +25,103 @@ const RegisterManager = () => {
         
         if(res.data.resMessage === 1){
             window.location.href = "/login";
+            return;
         }
-
+         setIsLoading(false);
         return setMessage('El usuario ya existe');
     }    
 
     return(
         <>
-        {message.length > 0 && <p className="text-red-500 text-center">{message}</p>}
-        <div className="">
-            <img className="mx-auto mb-10" src={appStoreB}></img>
-            <div className="h-full center-content">
-                <form className="secondary-background p-6 w-[500px] max-[700px]:w-full rounded-2xl border-gray-700 border-2" onSubmit={(e) => signInManager(e)}>
-                    <div className="mb-6 text-center">
-                        <h3 className="title title-font-a text-4xl">NovaStore</h3>
+                   <div className="register-root">
+                <div className="bg-glow bg-glow-1" />
+                <div className="bg-glow bg-glow-2" />
+                <div className="bg-grid" />
+ 
+                <div className="register-card">
+                    <div className="card-top-line" />
+ 
+                    <div className="logo-area">
+                        <img className="logo-img" src={appStoreB} alt="NovaStore" />
+                        <h1 className="brand-name">NovaStore</h1>
+                        <p className="brand-tagline">Crear cuenta</p>
                     </div>
-                    <div className="mb-4">
-                        <label className="form-label">Email</label>
-                        <input className="form-input" type="email" name="email"></input>
-                    </div>
-                    <div className="mb-4">
-                        <label className="form-label">Nombre de usuario</label>
-                        <input className="form-input" type="text" name="username"></input>
-                    </div>
-                    <div className="mb-4">
-                        <label className="form-label">Contraseña</label>
-                        <input className="form-input" type="password" name="password"></input>
-                    </div>
-                    <div className="mb-4">
-                        <label className="form-label">Confirmar contraseña</label>
-                        <input className="form-input" type="password" name="confirmPassword"></input>
-                    </div>
-                    <div className="py-6 text-center">
-                        <p>¿Ya tienes cuenta? <Link className="text-purple-400 font-medium" to="/login">Ingresa aqui</Link></p>
-                    </div>
-                    <button className="important-element py-2 font-medium w-full" type="submit">Registrarse</button>
-                </form>
+ 
+                    {message && (
+                        <div className="error-msg">
+                            <span>⚠</span>
+                            {message}
+                        </div>
+                    )}
+ 
+                    <form onSubmit={signInManager}>
+                        <div className="field-group">
+                            <label className="field-label" htmlFor="email">Email</label>
+                            <input
+                                className="field-input"
+                                id="email"
+                                type="email"
+                                name="email"
+                                placeholder="tu@email.com"
+                                required
+                            />
+                        </div>
+ 
+                        <div className="field-group">
+                            <label className="field-label" htmlFor="username">Nombre de usuario</label>
+                            <input
+                                className="field-input"
+                                id="username"
+                                type="text"
+                                name="username"
+                                placeholder="tu_usuario"
+                                required
+                            />
+                        </div>
+ 
+                        <div className="field-row">
+                            <div className="field-group">
+                                <label className="field-label" htmlFor="password">Contraseña</label>
+                                <input
+                                    className="field-input"
+                                    id="password"
+                                    type="password"
+                                    name="password"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+                            <div className="field-group">
+                                <label className="field-label" htmlFor="confirmPassword">Confirmar</label>
+                                <input
+                                    className="field-input"
+                                    id="confirmPassword"
+                                    type="password"
+                                    name="confirmPassword"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+                        </div>
+ 
+                        <div className="divider">
+                            <span className="divider-line" />
+                            <span className="divider-text">continuar</span>
+                            <span className="divider-line" />
+                        </div>
+ 
+                        <div className="login-link">
+                            ¿Ya tienes cuenta?{' '}
+                            <Link to="/login">Ingresa aquí</Link>
+                        </div>
+ 
+                        <button className="submit-btn" type="submit" disabled={isLoading}>
+                            {isLoading && <span className="spinner" />}
+                            {isLoading ? 'Registrando...' : 'Registrarse'}
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div>
         </>
     )
 }

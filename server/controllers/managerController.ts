@@ -7,6 +7,7 @@ import { preApproval } from "../lib/mp.ts";
 import { paymentClient } from "../lib/mp.ts";
 import jwt from 'jsonwebtoken';
 import axios from "axios";
+import UserModel from "../models/userModel.ts";
 
 interface TokenPayload extends JwtPayload  {
   email: string;
@@ -22,13 +23,15 @@ interface ManagerBody {
     payment?: number,
     paymentDate?: Date,
     managerId?: string,
-    cardToken?: string
+    cardToken?: string,
+    userRole?: string,
+    storeId?: string
 }
 
 
 export const createManagerContoller = async (req: Request<{}, {}, { signInData: ManagerBody } >, res: Response): Promise<Response> => {
     const {signInData} = req.body
-    console.log(signInData);
+    
     const salt: number = 12
     const hashedPassword: string = await bcrypt.hash(signInData.password, salt)
 
@@ -49,11 +52,11 @@ export const createManagerContoller = async (req: Request<{}, {}, { signInData: 
    return res.status(200).json({resMessage: 1})
 }
 
-export const loginManagerController = async (req: Request<{}, {}, ManagerBody>, res: Response) => {
-    const {email, password} = req.body
+export const loginController = async (req: Request<{}, {}, ManagerBody>, res: Response) => {
+    const {email, password, username, userRole} = req.body
 
+  if(userRole === 'manager'){
     const getManager = await managerModel.findOne({email: email})
-    console.log(email, password)
 
     if(getManager){
         const validPassword: boolean = await bcrypt.compare(password, getManager.password || '')
@@ -72,9 +75,31 @@ export const loginManagerController = async (req: Request<{}, {}, ManagerBody>, 
            
            return res.status(200).json({manager: getManager, token})
         }
-        return res.status(401).json({message: 'Las credenciales ingresadas son incorrectas!'}) 
     }
+  }else if(userRole === 'cashier'){
+      const getCashier = await UserModel.findOne({ username })
 
+    if(getCashier){
+        const validPassword: boolean = await bcrypt.compare(password, getCashier.userpassword || '')
+        if(validPassword){
+          
+           const secretKey: jwt.Secret = process.env.JWT_SECRET_KEY!
+
+           const token = jwt.sign(
+              { userId: getCashier._id,
+                storeId: getCashier.storeId,
+                role: getCashier.userRole},
+              secretKey,
+              {
+                expiresIn: "1d",
+                algorithm: "HS256",
+              }
+            );
+           
+           return res.status(200).json({manager: getCashier, token})
+        }
+    }
+  }
     return res.status(401).json({message: 'Las credenciales ingresadas son incorrectas!'}) 
 }
 

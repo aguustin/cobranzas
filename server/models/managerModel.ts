@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const ManagerSchema = new mongoose.Schema({
     email:{type: String},
     password:{type: String},
-    username:{type: String},  
+    username:{type: String},
+    userRole:{type: String},  
     storesQuantity:{type: Number},
     active:{type: Boolean, default: true},
     payments:[{

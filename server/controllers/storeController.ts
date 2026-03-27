@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import storeModel from "../models/storeModel.ts";
 import * as bcrypt from "bcrypt-ts";
 import cloudinary, { uploadFileToCloudinary } from "../lib/cloudinary.ts";
+import UserModel from "../models/userModel.ts";
 
 interface ITax {
   taxName: 'IVA' | 'IIBB' | 'TASA_MUNICIPAL' | 'GANANCIAS' | 'OTROS';
@@ -167,10 +168,27 @@ export const subsStoreController = async (req: Request, res: Response) => {
 
 export const listStoresController = async (req: Request<{sessionId: string}>, res: Response): Promise<Response> => {
     const {sessionId} = req.params
-    console.log(sessionId)
     const stores = await storeModel.find({managerId: sessionId})
-
     return res.send(stores)
+}
+
+export const listStoresByCashierController = async (
+  req: Request<{ sessionId: string }>,
+  res: Response
+): Promise<Response> => {
+  const { sessionId } = req.params
+  const cashier = await UserModel.findById(sessionId)
+  console.log(sessionId)
+
+  if (!cashier) {
+    return res.status(404).send({ message: "Cashier no encontrado" })
+  }
+
+  const stores = await storeModel.find({
+    _id: { $in: cashier.storeId }
+  })
+
+  return res.send(stores)
 }
 
 export const getStoreByIdController = async (req: Request<{}, {}, {storeId: string}>, res: Response): Promise<Response> => {

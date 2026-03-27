@@ -60,6 +60,15 @@ const Sidebar = () => {
         }
     ]
 
+
+    const logoutFunc = async () => {
+        await localStorage.removeItem("manager")
+        await localStorage.removeItem("token")
+        await localStorage.removeItem("role")
+        await localStorage.removeItem("__paypal_storage__")
+        window.location.href = '/login'
+    }
+
     const handleCloseSidebar = () => {
         if (window.innerWidth < 1400) {
             setSidebarOpen(false)
@@ -181,7 +190,7 @@ const Sidebar = () => {
                     <div className="border-t border-gray-800 my-4"></div>
 
                     {/* Dropdown de Usuario */}
-                    {session.email && (
+                    {(session.email || session.username) && (
                         <div className="relative">
                             <button
                                 onClick={() => setDropdownAdmin(!dropdownAdmin)}
@@ -248,17 +257,17 @@ const Sidebar = () => {
                                         Cambiar Plan
                                     </Link>
                                     <hr className="border-gray-700" />
-                                    <Link 
-                                        to="/" 
-                                        className="flex items-center gap-2 px-4 py-3 hover:bg-gray-750 transition-colors text-sm text-red-400"
+                                    <button 
+                                        className="flex items-center gap-2 px-4 py-3 hover:bg-gray-750 transition-colors text-sm text-red-400 cursor-pointer"
                                         onClick={() => {
+                                            logoutFunc()
                                             setDropdownAdmin(false)
                                             handleCloseSidebar()
                                         }}
                                     >
                                         <LogOut size={16} />
                                         Cerrar Sesión
-                                    </Link>
+                                    </button>
                                 </div>
                             )}
                         </div>

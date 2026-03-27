@@ -101,7 +101,7 @@ export const addSizesController = async (req: Request<{}, {}, { storeId: string;
 
 export const listProductsController = async (req: Request<{}, {}, {storeId: string, filter: number}>, res: Response): Promise<Response> => {
     const {storeId, filter} = req.body
-
+    
     let products;
 
     switch (filter) {
@@ -223,4 +223,11 @@ export const getStatisticsController = async (req: Request<{type: number}, {}, {
   statistics = await query
 
   return res.status(200).json({statistics})
+}
+
+
+export const getAllProducts = async (req, res) => {
+    const a = await productModel.find()
+
+    return res.send(a)
 }

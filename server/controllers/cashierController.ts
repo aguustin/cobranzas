@@ -29,7 +29,7 @@ export const getAllCashiersController = async (req: Request, res: Response) => {
     return res.status(200).json(cashiers)
 }
 
-export const registerCashierController = async (
+/*export const registerCashierController = async (
   req: Request<{}, {}, UserBody>,
   res: Response
 ): Promise<Response> => {
@@ -79,6 +79,84 @@ export const registerCashierController = async (
   })
 
   return res.status(200).json('El usuario se creó con exito') 
+}*/
+
+export const registerCashierController = async (
+  req: Request<{}, {}, UserBody>,
+  res: Response
+): Promise<Response> => {
+  try {
+    const {
+      storeId,
+      fullName,
+      username,
+      userpassword,
+      userDni
+    } = req.body
+
+    let imageUrl: string | undefined
+
+    // 📸 Subir imagen si existe
+    if (req.file) {
+      imageUrl = await uploadFileToCloudinaryAtmFolder(req.file)
+    }
+
+    // 🔎 Buscar si ya existe un cajero con ese DNI
+    const cashierByDni = await UserModel.findOne({ userDni })
+
+    // 🔎 Buscar si ya existe ese username
+    const cashierByUsername = await UserModel.findOne({ username })
+
+    // ❌ Si el username ya existe y pertenece a otro usuario distinto
+    if (
+      cashierByUsername &&
+      (!cashierByDni || cashierByUsername._id.toString() !== cashierByDni._id.toString())
+    ) {
+      return res.status(409).json('El nombre de usuario ya está en uso')
+    }
+
+    // ✅ Si el cajero ya existe, reutilizarlo
+    if (cashierByDni) {
+      const alreadyInStore = cashierByDni.storeId.includes(storeId)
+
+      if (alreadyInStore) {
+        return res.status(409).json('El cajero ya está registrado en esta tienda')
+      }
+
+      // Agregar nueva tienda al array
+      cashierByDni.storeId.push(storeId)
+
+      // opcional: actualizar foto solo si no tenía
+      if (imageUrl && !cashierByDni.userPhoto) {
+        cashierByDni.userPhoto = imageUrl
+      }
+
+      await cashierByDni.save()
+
+      return res.status(200).json('El cajero ya existía y fue asignado a la nueva tienda')
+    }
+
+    // 🆕 Si no existe, crear nuevo cajero
+    const salt = 12
+    const hashedPassword = await bcrypt.hash(userpassword, salt)
+
+    await UserModel.create({
+      storeId: [storeId],
+      fullName,
+      username,
+      userpassword: hashedPassword,
+      userDni,
+      UserDate: new Date(),
+      userPhoto: imageUrl,
+      userRole: 'cashier',
+      isActive: true
+    })
+
+    return res.status(200).json('El usuario se creó con éxito')
+  } catch (error) {
+    console.error('Error al registrar cajero:', error)
+    return res.status(500).json('Error interno del servidor')
+  }
 }
 
 export const loginCashierController = async (req: Request, res: Response) => {
