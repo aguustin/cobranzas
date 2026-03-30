@@ -46,7 +46,8 @@ export const createManagerContoller = async (req: Request<{}, {}, { signInData: 
    await managerModel.create({
         email: signInData.email,
         password: hashedPassword,
-        username: signInData.username
+        username: signInData.username,
+        userRole: "manager"
    })
 
    return res.status(200).json({resMessage: 1})
@@ -65,7 +66,7 @@ export const loginController = async (req: Request<{}, {}, ManagerBody>, res: Re
            const secretKey: jwt.Secret = process.env.JWT_SECRET_KEY!
 
            const token = jwt.sign(
-              { email: getManager.email },
+              { email: getManager.email, role: getManager.userRole },
               secretKey,
               {
                 expiresIn: "1d",

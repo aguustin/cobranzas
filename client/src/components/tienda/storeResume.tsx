@@ -27,13 +27,12 @@ import ContextBody from '../../context';
   }
 
 export const StoreResume = () => {
-  const {cashierSession, getStoreByIdContext} = useContext(ContextBody)
+  const {cashierSession, getStoreByIdContext, session} = useContext(ContextBody)
   const { storeId } = useParams<{ storeId: string}>();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [storeData, setStoreData] = useState<StoreType | null>(null);
   const [sellsData, setSellsData] = useState<DailySellData | null>(null);
   const [boxData, setBoxData] = useState<BoxType | null>(null);
-
   // Actualizar el reloj cada segundo
   /*useEffect(() => {
     const timer = setInterval(() => {
@@ -49,10 +48,10 @@ export const StoreResume = () => {
           setSellsData(res.data.sells)
           setBoxData(res.data.box)
       }
+      
       getStoreFunc()
       getStoreByIdContext({storeId})
   }, [])
-  
   console.log('tienda: ', storeData)
   console.log('sells: ', sellsData)
   console.log('caja: ', boxData)
@@ -184,13 +183,15 @@ export const StoreResume = () => {
 
         {/* Métricas del Día */}
         <div className="mb-8">
-          <div className='flex items-center'>
-            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <TrendingUp className="text-indigo-500" size={28} />
-              Resumen del Día
-            </h2>
-            <Link className='mb-6 gap-2 font-bold ml-6 bg-gradient-to-r from-indigo-700 to-indigo-800 py-2 px-4 rounded-lg shadow-xl hover:shadow-indigo-500/10 hover:px-5 transition-all' to={`/store_statistics/${storeId}/${storeData?.storeName}`}>Ver estadisticas</Link>
-          </div>
+          {session?.userRole === 'manager' && 
+            <div className='flex items-center'>
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <TrendingUp className="text-indigo-500" size={28} />
+                Resumen del Día
+              </h2>
+              <Link className='mb-6 gap-2 font-bold ml-6 bg-gradient-to-r from-indigo-700 to-indigo-800 py-2 px-4 rounded-lg shadow-xl hover:shadow-indigo-500/10 hover:px-5 transition-all' to={`/store_statistics/${storeId}/${storeData?.storeName}`}>Ver estadisticas</Link>
+            </div>
+          }
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             

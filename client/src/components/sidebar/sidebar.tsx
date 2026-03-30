@@ -169,7 +169,7 @@ const Sidebar = () => {
                     {/* Menú de Navegación */}
                     <nav className="space-y-2 mb-6">
                         {menuItems.map((item) => {
-                            if (!item.show) return null;
+                            if (!item.show || localStorage.getItem("manager.userRole") === "cashier" && item.label === 'Cajeros') return null;
                             const Icon = item.icon;
                             
                             return (

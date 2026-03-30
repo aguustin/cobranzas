@@ -34,11 +34,12 @@ export const createStoreController = async (req: Request<{}, {}, StoreBody>, res
 
     const {managerId, storeName, domicile, storePassword, identificationTaxNumber, phone, storeEmail, storeTaxes} = req.body
     console.log('MANAGER ID ', managerId)
-    const storeExists = await storeModel.findOne({storeName: storeName})
+    //const storeExists = await storeModel.findOne({storeName: storeName})
 
-    if(storeExists){
+   /* if(storeExists){
+        console.log("la tienda ya ex")
         return res.status(200).json(2)
-    }
+    }-*/
 
     const salt: number = 12
     const hashedPassword: string = await bcrypt.hash(storePassword, salt)
