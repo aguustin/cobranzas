@@ -3,15 +3,16 @@ import { User, Lock, LogIn, UserPlus, Upload, Trash2, Clock, CheckCircle, XCircl
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { loginCashierRequest, registerCashierRequest } from '../../api/cashierRequests';
 import ContextBody from '../../context';
+import { useNotification } from '../../globalComp';
 //import { useNotification } from '../../globalComp';
 
 // ==================== COMPONENTE 1: Login de Cajero ====================
 
 export function LoginCajero() {
   const { storeId } = useParams<{ storeId: string}>();  
-  const [message, setMessage] = useState(0)
   const {loginCashierContext} = useContext(ContextBody)
-
+  const [message, setMessage] = useState(0)
+  let msg;
   const [userData, setUserData] = useState({
     storeId: storeId,
     username: '',
@@ -25,11 +26,12 @@ export function LoginCajero() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    loginCashierContext(userData)
+    msg = await loginCashierContext(userData)
+    setMessage(msg)
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex items-center justify-center p-8">
+    <div className="min-h-[90vh] bg-gray-950 text-gray-100 flex items-center justify-center p-8">
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
@@ -43,7 +45,7 @@ export function LoginCajero() {
         {/* Formulario */}
         <form onSubmit={(e) => handleLogin(e)} className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800 rounded-xl p-8 shadow-2xl">
           {/* Username */}
-          <div className="mb-6">
+          <div className="mb-3">
             <label className="block text-sm font-semibold text-gray-400 mb-2">
               Usuario
             </label>
@@ -61,7 +63,7 @@ export function LoginCajero() {
           </div>
 
           {/* Password */}
-          <div className="mb-6">
+          <div className="mb-3">
             <label className="block text-sm font-semibold text-gray-400 mb-2">
               Contraseña
             </label>
@@ -77,7 +79,11 @@ export function LoginCajero() {
               />
             </div>
           </div>
-
+          {message === 1 && <div className="mb-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <p className="text-sm text-red-400 text-center">
+            <span className="font-semibold">Usuario incorrecto:</span> Asegúrate de completar todos los campos para una mejor gestión de tu inventario.
+          </p>
+        </div>}
           {/* Botón Login */}
           <button 
             type='submit'
@@ -519,10 +525,22 @@ const handleLogout = () => {
 
 // ==================== COMPONENTE PRINCIPAL (para demostración) ====================
 const CashierSystem = () => {
-  const {cashierSession} = useContext(ContextBody)
+  const {cashierSession, session, message} = useContext(ContextBody)
   const [vista, setVista] = useState('login');
- // const {notifications, showNotification, removeNotification} = useNotification()
-  const [message, setMessage] = useState(0)
+  const {showNotification} = useNotification()
+
+   useEffect(() => {
+    if (message === 1) {
+      showNotification({
+        type: 'success',
+        message: '✓ Usuario registrado exitosamente',
+        position: 'top-right'
+      });
+    }
+    if(message === 0){
+      console.log('aaaasdadaaaaaaaaaaaaaaaaaaaaaaaaa')
+    }
+  }, [message]);
   
   if (cashierSession && cashierSession.user) {
     return <CashierProfile />;
@@ -541,25 +559,27 @@ const CashierSystem = () => {
         >
           Login
         </button>
+       {session?.userRole === 'manager' &&  
         <button 
-          onClick={() => setVista('registrar')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            vista === 'registrar' 
-              ? 'bg-indigo-600 text-white' 
-              : 'bg-gray-800 text-gray-400 border border-gray-700'
-          }`}
-        >
-          Registrar
-        </button>
+            onClick={() => setVista('registrar')}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              vista === 'registrar' 
+                ? 'bg-indigo-600 text-white' 
+                : 'bg-gray-800 text-gray-400 border border-gray-700'
+            }`}
+          >
+            Registrar
+          </button>
+        }
       </div>
 
       {/* Renderizar vista correspondiente */}
       {vista === 'login' && <LoginCajero />}
       {vista === 'registrar' && <CashierLS />}
-      {message > 0  && showNotification({ type: 'success',
+      {/*message === 1  && showNotification({ type: 'success',
                 message: '✓ Usuario registrado exitosamente',
                 position: 'top-right'})
-      }
+      */}
     </div>
   );
 }

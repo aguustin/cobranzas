@@ -1,8 +1,10 @@
 import { Package } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import CreateProduct from "../admin/createProduct"
 import { listProductsRequest } from "../../api/productRequests"
 import { Link, useParams } from "react-router-dom"
+import ContextBody from "../../context"
+import ExcelUploader from "./importProducts"
 
 const Products = () => {
    type ProductBody = {
@@ -14,8 +16,11 @@ const Products = () => {
     productQuantity:number,
     totalSells:number
    }
+   const {session} = useContext(ContextBody)
    const { storeId } = useParams<{ storeId: string}>();
    const [hideCreateProduct, setHideCreateProduct] = useState<boolean>(false)
+   const [hideImportProduct, setHideimportProduct] = useState<boolean>(false)
+
    const [products, setProducts] = useState<ProductBody[]>([])
    const [filter, setFilter] = useState<number>(1)
         // productId:{type: String}, productName:{type: String}, productPrice:{type: Number}, productQuantity:{type: Number}
@@ -34,7 +39,10 @@ const Products = () => {
                 {!hideCreateProduct && 
                 <>
                   <div className="flex items-center justify-between">
-                  {localStorage.getItem('cachier') && <button onClick={() => setHideCreateProduct(true)} className="important-element flex items-center p-3 mb-3 font-medium cursor-pointer"><svg className="mr-2" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#f8f8f8de"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M6 12H18M12 6V18" stroke="#f8f8f8de" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>Crear producto</button>}
+                  <div className="flex items-center">
+                    {session?.userRole === 'manager' && <button onClick={() => setHideCreateProduct(true)} className="important-element flex items-center p-3 mb-3 font-medium cursor-pointer"><svg className="mr-2" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#f8f8f8de"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M6 12H18M12 6V18" stroke="#f8f8f8de" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>Crear producto</button>}
+                    {session?.userRole === 'manager' && <button onClick={() => setHideimportProduct(!hideImportProduct)} className="ml-3 bg-green-800 rounded-lg flex items-center p-3 mb-3 font-medium cursor-pointer"><svg className="mr-2" width="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#f8f8f8de"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M6 12H18M12 6V18" stroke="#f8f8f8de" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>Importar productos</button>}
+                  </div>
                   <select onChange={(e) => setFilter(e.target.value)} className="bg-gray-900 border border-gray-800 text-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 mb-3">
                     <option value={1}>Todos los productos</option>
                     <option value={2}>Productos con bajo stock</option>
@@ -108,6 +116,7 @@ const Products = () => {
                       </div>
                 </>}
                     {hideCreateProduct && (<CreateProduct   setHideCreateProduct={setHideCreateProduct} storeId={storeId} />)}
+                    {hideImportProduct && <ExcelUploader/>}
                 </>
             )
     }

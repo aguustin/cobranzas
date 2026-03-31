@@ -26,7 +26,7 @@ const Sidebar = () => {
         window.addEventListener('resize', handleResize)
         return () => window.removeEventListener('resize', handleResize)
     }, [])
-
+session?.userRole === 'manager' 
     const menuItems = [
         {
             to: '/store_list',
@@ -56,7 +56,7 @@ const Sidebar = () => {
             to: `/clients_list/${currentStore}`,
             icon: ClipboardList,
             label: 'Clientes',
-            show: true
+            show: session?.userRole === 'manager' 
         }
     ]
 
@@ -169,7 +169,7 @@ const Sidebar = () => {
                     {/* Menú de Navegación */}
                     <nav className="space-y-2 mb-6">
                         {menuItems.map((item) => {
-                            if (!item.show || localStorage.getItem("manager.userRole") === "cashier" && item.label === 'Cajeros') return null;
+                            
                             const Icon = item.icon;
                             
                             return (

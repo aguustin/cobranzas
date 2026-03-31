@@ -52,7 +52,7 @@ export const StoreStatistics = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [storeId, timeFilter])
 
-    console.log(sellsData)
+    console.log('money en caja: ', sellsData)
 
  const chartDataByFilter = sellsData || [];
 
@@ -221,7 +221,7 @@ export const StoreStatistics = () => {
               </div>
             </div>
             <h3 className="text-gray-400 text-sm mb-1">Subtotal Ganado</h3>
-            <p className="text-3xl font-bold text-white">{formatCurrency(sellsData?.[0]?.ventas)}</p>
+            {sellsData?.[0]?.ventas ? <p className="text-3xl font-bold text-white">{formatCurrency(sellsData?.[0]?.ventas)}</p> : <p className="text-3xl font-bold text-white">0</p> }
           </div>
 
           {/* Diferencia de Caja */}
@@ -266,7 +266,7 @@ export const StoreStatistics = () => {
                   ? 'text-green-400' 
                   : 'text-red-400'
             }`}>
-              {sellsData?.diferencia === 0 
+              {sellsData?.totalMoneyInBox === undefined ||  sellsData?.totalMoneyInBox === 0
                 ? 'Sin diferencia' 
                 : formatCurrency(Math.abs(sellsData?.totalMoneyInBox))}
             </p>

@@ -168,11 +168,13 @@ export const loginCashierController = async (req: Request, res: Response) => {
     const user = await UserModel.findOne({ storeId, username })
 
     if (!user) {
-      return res.status(404).json({ code: 2 }) // usuario no existe
+      console.log('no existe')
+      return res.status(200).json({token:0, code: 2 }) // usuario no existe
     }
 
     if (!user.isActive) {
-      return res.status(403).json({ code: 3 }) // usuario desactivado
+      console.log('usuario desactivo')
+      return res.status(403).json({token:0, code: 3 }) // usuario desactivado
     }
 
  
@@ -182,7 +184,7 @@ export const loginCashierController = async (req: Request, res: Response) => {
       user.userpassword
     )
     if (!passwordMatch) {
-      return res.status(401).json({ code: 1 })
+      return res.status(401).json({token:0, code: 1 })
     }
 
     // 🏪 Obtener info mínima de la tienda (opcional pero útil)

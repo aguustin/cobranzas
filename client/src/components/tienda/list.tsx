@@ -65,7 +65,7 @@ const Lists = () => {
             </div>
 
             {/* Botón Crear Tienda */}
-            {localStorage.getItem('role') !== 'cashier' && 
+            {session?.userRole === 'manager' && 
               <button 
                 onClick={() => setHideCreateStoreForm(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-indigo-500/20 hover:scale-[1.02]"
@@ -137,17 +137,19 @@ const Lists = () => {
 
                 {/* Botones de Acción */}
                 <div className="flex gap-2">
-                  <Link to={`/edit_store/${store._id}`}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-750 text-gray-300 rounded-lg font-medium transition-all border border-gray-700 hover:border-indigo-500"
-                  >
-                    <Edit size={16} />
-                    Editar
-                  </Link>
+                  {session?.userRole === 'manager' &&
+                    <Link to={`/edit_store/${store._id}`}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-750 text-gray-300 rounded-lg font-medium transition-all border border-gray-700 hover:border-indigo-500"
+                    >
+                      <Edit size={16} />
+                      Editar
+                    </Link>
+                  }
                   <Link to={`/store_resume/${store._id}`}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-indigo-500/20"
                   >
                     <Eye size={16} />
-                    Ver
+                    Ingresar
                   </Link>
                 </div>
               </div>

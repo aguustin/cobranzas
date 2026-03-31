@@ -19,7 +19,8 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
     const [cashierSession, setCashierSession] = useState({})
     const [stores, setStores] = useState<storeType[]>([])
     const [currentStore, setCurrentStore] = useState([])
-
+    const [message, setMessage] = useState(0)
+    
     useEffect(() => {
         const getSession = async () => {
             setSession(JSON.parse(localStorage.getItem('manager') || '{}'))
@@ -51,17 +52,20 @@ export const ContextBodyProvider = ({children}: PropsWithChildren) => {
 
     const loginCashierContext = async (userData) => {
         const res = await loginCashierRequest(userData)
-        if(res.data.token.length > 0){
+        console.log(res.data.token)
+        if(res.data.token !== 0){
             localStorage.setItem('cashier', JSON.stringify(res.data));
             localStorage.setItem('cashierId', res.data.user._id);
             const cachierData = JSON.parse(localStorage.getItem('cashier'))
             setCashierSession(cachierData)
             navigate(`/store_resume/${res.data.user.storeId}`)
+        }else{
+            return 1
         }
     }
     
     return(
-        <ContextBody.Provider value={{session, setSession, cashierSession, setCashierSession, stores, listStoresFunc, getStoreByIdContext, currentStore, loginCashierContext}}>
+        <ContextBody.Provider value={{session, setSession, cashierSession, setCashierSession, stores, message, setMessage, listStoresFunc, getStoreByIdContext, currentStore, loginCashierContext}}>
             {children}
         </ContextBody.Provider>
     )
